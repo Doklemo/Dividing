@@ -52,8 +52,8 @@ export default function ExportMenu({ study }: ExportMenuProps) {
           display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
-          background: '#18181b',
-          border: '1px solid #27272a',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-mid)',
           borderRadius: 'var(--radius-sm)',
           color: 'var(--text-primary)',
           fontSize: '13px',
@@ -63,12 +63,12 @@ export default function ExportMenu({ study }: ExportMenuProps) {
           transition: 'all 200ms',
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = '#27272a';
-          (e.currentTarget as HTMLButtonElement).style.borderColor = '#3f3f46';
+          (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
+          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = '#18181b';
-          (e.currentTarget as HTMLButtonElement).style.borderColor = '#27272a';
+          (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
+          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
         }}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -83,8 +83,8 @@ export default function ExportMenu({ study }: ExportMenuProps) {
             position: 'absolute',
             top: 'calc(100% + 6px)',
             right: 0,
-            background: '#18181b',
-            border: '1px solid #27272a',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-mid)',
             borderRadius: 'var(--radius-md)',
             boxShadow: 'var(--shadow-card)',
             minWidth: '180px',
@@ -111,7 +111,7 @@ export default function ExportMenu({ study }: ExportMenuProps) {
               textAlign: 'left',
               transition: 'background 150ms',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#27272a')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tab-active)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             <span>📄</span>
@@ -142,7 +142,7 @@ export default function ExportMenu({ study }: ExportMenuProps) {
               textAlign: 'left',
               transition: 'background 150ms',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#27272a')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tab-active)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             <span>📝</span>

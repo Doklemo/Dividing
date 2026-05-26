@@ -76,7 +76,7 @@ export default function ScriptureInput({ onSubmit, isLoading }: ScriptureInputPr
           flex: 1,
           position: 'relative',
           borderRadius: 'var(--radius-lg)',
-          border: `1px solid ${isFocused ? '#3f3f46' : 'var(--border-mid)'}`,
+          border: `1px solid ${isFocused ? 'var(--border-brand)' : 'var(--border-mid)'}`,
           transition: 'border-color 150ms ease',
           background: 'var(--bg-input)',
           overflow: 'hidden',
@@ -161,7 +161,7 @@ export default function ScriptureInput({ onSubmit, isLoading }: ScriptureInputPr
             onClick={loadExample}
             disabled={isLoading}
             style={{
-              background: '#18181b',
+              background: 'var(--bg-card)',
               border: '1px solid var(--border-mid)',
               borderRadius: 'var(--radius-sm)',
               color: 'var(--text-secondary)',
@@ -172,12 +172,12 @@ export default function ScriptureInput({ onSubmit, isLoading }: ScriptureInputPr
               fontFamily: 'Inter, sans-serif',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#27272a';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#3f3f46';
+              (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
               (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#18181b';
+              (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
               (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
               (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
             }}

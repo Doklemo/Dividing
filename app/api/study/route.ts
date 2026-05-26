@@ -218,20 +218,32 @@ export async function POST(req: NextRequest) {
     console.error('Study API error:', error);
 
     const errorMessage = error?.message || '';
+    const statusCode = error?.status || error?.statusCode;
     const isQuotaError =
+      statusCode === 429 ||
       errorMessage.includes('ResourceExhausted') ||
       errorMessage.includes('Quota exceeded') ||
       errorMessage.includes('429');
 
-    // Attempt OpenRouter fallback if Gemini is rate-limited/quota-exhausted and OpenRouter key is set
-    if (isQuotaError && process.env.OPENROUTER_API_KEY && userMessage) {
-      console.log('Gemini rate limit exceeded. Attempting OpenRouter Llama-3-8B fallback...');
-      try {
-        const fallbackContent = await callOpenRouterFallback(userMessage);
-        const result = cleanAndParseJSON(fallbackContent);
-        return NextResponse.json(result);
-      } catch (fallbackError: any) {
-        console.error('OpenRouter fallback also failed:', fallbackError);
+    // Attempt OpenRouter fallback if Gemini is rate-limited/quota-exhausted
+    if (isQuotaError && userMessage) {
+      if (process.env.OPENROUTER_API_KEY) {
+        console.log('Gemini rate limit exceeded. Attempting OpenRouter (openrouter/free) fallback...');
+        try {
+          const fallbackContent = await callOpenRouterFallback(userMessage);
+          const result = cleanAndParseJSON(fallbackContent);
+          return NextResponse.json(result);
+        } catch (fallbackError: any) {
+          console.error('OpenRouter fallback failed:', fallbackError);
+          return NextResponse.json(
+            {
+              error: `The Gemini API rate limit was exceeded and the OpenRouter fallback failed: ${fallbackError?.message || fallbackError}`,
+            },
+            { status: 429 }
+          );
+        }
+      } else {
+        console.warn('Gemini rate limit exceeded but OPENROUTER_API_KEY is not set.');
       }
     }
 

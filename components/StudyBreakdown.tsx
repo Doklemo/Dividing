@@ -51,8 +51,8 @@ function EmptyState() {
           width: '64px',
           height: '64px',
           borderRadius: '16px',
-          background: '#18181b',
-          border: '1px solid #27272a',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-mid)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -198,7 +198,7 @@ function CommentariesTab({ commentaries }: { commentaries: StudyResult['commenta
           className="card animate-fade-up"
           style={{
             padding: '18px 20px',
-            borderLeft: '3px solid #3f3f46',
+            borderLeft: '3px solid var(--border-brand)',
             animationDelay: `${i * 0.07}s`,
             animationFillMode: 'both',
           }}
@@ -209,8 +209,8 @@ function CommentariesTab({ commentaries }: { commentaries: StudyResult['commenta
                 width: '28px',
                 height: '28px',
                 borderRadius: '50%',
-                background: '#27272a',
-                border: '1px solid #3f3f46',
+                background: 'var(--bg-tab-active)',
+                border: '1px solid var(--border-brand)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -280,7 +280,7 @@ export default function StudyBreakdown({ result, isLoading, scripture }: StudyBr
       <div
         style={{
           padding: '20px 24px 0',
-          borderBottom: '1px solid #27272a',
+          borderBottom: '1px solid var(--border-mid)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>

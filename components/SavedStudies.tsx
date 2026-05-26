@@ -61,12 +61,12 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
           bottom: 0,
           width: '360px',
           maxWidth: '90vw',
-          background: '#18181b',
-          borderLeft: '1px solid #27272a',
+          background: 'var(--bg-card)',
+          borderLeft: '1px solid var(--border-mid)',
           zIndex: 100,
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '-20px 0 60px rgba(0,0,0,0.5)',
+          boxShadow: 'var(--drawer-shadow)',
         }}
         role="dialog"
         aria-label="Saved studies"
@@ -76,7 +76,7 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #27272a',
+            borderBottom: '1px solid var(--border-mid)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -93,10 +93,10 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
           <button
             onClick={onClose}
             style={{
-              background: '#27272a',
-              border: '1px solid #3f3f46',
+              background: 'var(--bg-tab-active)',
+              border: '1px solid var(--border-brand)',
               borderRadius: '8px',
-              color: '#ffffff',
+              color: 'var(--text-primary)',
               width: '32px',
               height: '32px',
               cursor: 'pointer',
@@ -163,20 +163,20 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
                       onClick={() => { onLoad(study); onClose(); }}
                       style={{
                         flex: 1,
-                        background: '#27272a',
-                        border: '1px solid #3f3f46',
+                        background: 'var(--bg-tab-active)',
+                        border: '1px solid var(--border-brand)',
                         borderRadius: '6px',
-                        color: '#ffffff',
+                        color: 'var(--text-primary)',
                         fontSize: '12px',
                         fontWeight: '600',
                         padding: '6px 10px',
                         cursor: 'pointer',
                       }}
                       onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = '#3f3f46';
+                        (e.currentTarget as HTMLButtonElement).style.background = 'var(--border-brand)';
                       }}
                       onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = '#27272a';
+                        (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
                       }}
                     >
                       Load
@@ -184,8 +184,8 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
                     <button
                       onClick={() => exportToText(study)}
                       style={{
-                        background: '#18181b',
-                        border: '1px solid #27272a',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-mid)',
                         borderRadius: '6px',
                         color: 'var(--text-secondary)',
                         fontSize: '11px',
@@ -193,12 +193,12 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
                         cursor: 'pointer',
                       }}
                       onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = '#27272a';
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = '#3f3f46';
+                        (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
                       }}
                       onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = '#18181b';
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = '#27272a';
+                        (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
                       }}
                     >
                       .txt
@@ -207,8 +207,8 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
                       onClick={() => handleExportPDF(study)}
                       disabled={exportingKey === study.key}
                       style={{
-                        background: '#18181b',
-                        border: '1px solid #27272a',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-mid)',
                         borderRadius: '6px',
                         color: 'var(--text-secondary)',
                         fontSize: '11px',
@@ -218,14 +218,14 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
                       }}
                       onMouseEnter={(e) => {
                         if (exportingKey !== study.key) {
-                          (e.currentTarget as HTMLButtonElement).style.background = '#27272a';
-                          (e.currentTarget as HTMLButtonElement).style.borderColor = '#3f3f46';
+                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
+                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (exportingKey !== study.key) {
-                          (e.currentTarget as HTMLButtonElement).style.background = '#18181b';
-                          (e.currentTarget as HTMLButtonElement).style.borderColor = '#27272a';
+                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
+                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
                         }
                       }}
                     >

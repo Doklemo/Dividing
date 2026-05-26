@@ -80,8 +80,8 @@ export default function HomePage() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '12px 32px',
-          borderBottom: '1px solid #27272a',
-          background: 'rgba(9,9,11,0.6)',
+          borderBottom: '1px solid var(--border-mid)',
+          background: 'var(--toolbar-bg)',
           backdropFilter: 'blur(10px)',
           gap: '12px',
           flexWrap: 'wrap',
@@ -144,8 +144,8 @@ export default function HomePage() {
               className="mobile-view-breakdown-btn"
               onClick={() => setMobileView('breakdown')}
               style={{
-                background: '#18181b',
-                border: '1px solid #27272a',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-mid)',
                 borderRadius: 'var(--radius-sm)',
                 color: 'var(--text-primary)',
                 fontSize: '13px',
@@ -169,8 +169,8 @@ export default function HomePage() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              background: '#18181b',
-              border: '1px solid #27272a',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-mid)',
               borderRadius: 'var(--radius-sm)',
               color: 'var(--text-primary)',
               fontSize: '13px',
@@ -181,12 +181,12 @@ export default function HomePage() {
               position: 'relative',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#27272a';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#3f3f46';
+              (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#18181b';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#27272a';
+              (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
             }}
             aria-label={`View saved studies (${savedStudies.length})`}
           >
@@ -194,9 +194,9 @@ export default function HomePage() {
             {savedStudies.length > 0 && (
               <span
                 style={{
-                  background: '#27272a',
-                  color: '#ffffff',
-                  border: '1px solid #3f3f46',
+                  background: 'var(--bg-tab-active)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-brand)',
                   fontSize: '10px',
                   fontWeight: '700',
                   width: '18px',
@@ -275,7 +275,7 @@ export default function HomePage() {
           }
           .input-panel {
             border-right: none !important;
-            border-bottom: 1px solid #27272a !important;
+            border-bottom: 1px solid var(--border-mid) !important;
             padding: 24px 16px !important;
             overflow-y: visible !important;
           }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export const metadata: Metadata = {
   title: 'Dividing — AI-Powered Bible Study',
@@ -27,6 +28,20 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
           rel="stylesheet"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('theme');
+                  if (saved === 'light') {
+                    document.documentElement.classList.add('light');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body>
         {/* Navigation */}
@@ -42,21 +57,28 @@ export default function RootLayout({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '0 32px',
-            background: 'rgba(9,9,11,0.85)',
+            background: 'var(--nav-bg)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            borderBottom: '1px solid #27272a',
+            borderBottom: '1px solid var(--border-mid)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', height: '32px' }}>
             <img
               src="/logo.png"
               alt="Dividing Logo"
-              style={{ height: '20px', width: 'auto', display: 'block', opacity: 0.95 }}
+              style={{
+                height: '20px',
+                width: 'auto',
+                display: 'block',
+                opacity: 0.95,
+                filter: 'var(--logo-filter)',
+              }}
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <ThemeToggle />
             <a
               href="https://2timothy2-15.com"
               target="_blank"
