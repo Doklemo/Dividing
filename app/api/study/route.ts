@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'Invalid API key. Please configure GEMINI_API_KEY in .env.local.' },
+      { error: 'Invalid API key. Please configure GEMINI_API_KEY in your environment variables (or .env.local locally).' },
       { status: 401 }
     );
   }
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     const errorMessage = error?.message || '';
     if (errorMessage.includes('API key') || errorMessage.includes('KEY_INVALID') || errorMessage.includes('invalid')) {
       return NextResponse.json(
-        { error: 'Invalid API key. Please check your GEMINI_API_KEY in .env.local.' },
+        { error: 'Invalid API key. Please check your GEMINI_API_KEY configuration.' },
         { status: 401 }
       );
     }
