@@ -76,6 +76,28 @@ async function withRetry<T>(
   throw lastError;
 }
 
+// Helper to fetch the official scripture text if the input is a reference query (e.g. "John 3:16")
+async function fetchScriptureText(query: string): Promise<string | null> {
+  const cleanQuery = query.trim();
+  // If the query is long or contains multiple lines, it's likely the full verse text already, not just a reference.
+  if (cleanQuery.length > 80 || cleanQuery.includes('\n') || cleanQuery.includes('\r')) {
+    return null;
+  }
+  
+  try {
+    const res = await fetch(`https://bible-api.com/${encodeURIComponent(cleanQuery)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && data.text) {
+      return `${data.reference} (${data.translation_name})\n\n${data.text.trim()}`;
+    }
+    return null;
+  } catch (e) {
+    console.error('Error fetching scripture text from API:', e);
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
 
@@ -104,6 +126,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let passageText = scripture.trim();
+    const fetchedText = await fetchScriptureText(passageText);
+    if (fetchedText) {
+      passageText = fetchedText;
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
     
     // Initialize the model with the system prompt and Google Search grounding enabled
@@ -112,7 +140,7 @@ export async function POST(req: NextRequest) {
       systemInstruction: SYSTEM_PROMPT,
     });
 
-    const userMessage = `Please provide a comprehensive Bible study breakdown for the following scripture:\n\n${scripture.trim()}`;
+    const userMessage = `Please provide a comprehensive Bible study breakdown for the following scripture:\n\n${passageText}`;
 
     const completion = await withRetry(() =>
       model.generateContent({
