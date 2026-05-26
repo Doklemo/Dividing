@@ -124,7 +124,7 @@ async function callOpenRouterFallback(userMessage: string): Promise<string> {
       'X-Title': 'Dividing Bible Study',
     },
     body: JSON.stringify({
-      model: 'meta-llama/llama-3-8b-instruct:free',
+      model: 'meta-llama/llama-3.1-8b-instruct:free',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userMessage },
