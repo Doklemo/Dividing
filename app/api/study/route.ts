@@ -98,6 +98,46 @@ async function fetchScriptureText(query: string): Promise<string | null> {
   }
 }
 
+// Helper to call OpenRouter API using a free model as a fallback if Gemini rate limits or quotas are exceeded.
+async function callOpenRouterFallback(userMessage: string): Promise<string> {
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  if (!openRouterKey) {
+    throw new Error('OPENROUTER_API_KEY environment variable is not configured.');
+  }
+
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${openRouterKey}`,
+      'HTTP-Referer': 'https://dividing.app',
+      'X-Title': 'Dividing Bible Study',
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-3-8b-instruct:free',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const message = errorData?.error?.message || `OpenRouter returned status ${response.status}`;
+    throw new Error(`OpenRouter Fallback Failed: ${message}`);
+  }
+
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error('OpenRouter returned an empty response.');
+  }
+  return content;
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
 
@@ -107,6 +147,8 @@ export async function POST(req: NextRequest) {
       { status: 401 }
     );
   }
+
+  let userMessage = '';
 
   try {
     const body = await req.json();
@@ -140,7 +182,7 @@ export async function POST(req: NextRequest) {
       systemInstruction: SYSTEM_PROMPT,
     });
 
-    const userMessage = `Please provide a comprehensive Bible study breakdown for the following scripture:\n\n${passageText}`;
+    userMessage = `Please provide a comprehensive Bible study breakdown for the following scripture:\n\n${passageText}`;
 
     const completion = await withRetry(() =>
       model.generateContent({
@@ -167,6 +209,23 @@ export async function POST(req: NextRequest) {
     console.error('Study API error:', error);
 
     const errorMessage = error?.message || '';
+    const isQuotaError =
+      errorMessage.includes('ResourceExhausted') ||
+      errorMessage.includes('Quota exceeded') ||
+      errorMessage.includes('429');
+
+    // Attempt OpenRouter fallback if Gemini is rate-limited/quota-exhausted and OpenRouter key is set
+    if (isQuotaError && process.env.OPENROUTER_API_KEY && userMessage) {
+      console.log('Gemini rate limit exceeded. Attempting OpenRouter Llama-3-8B fallback...');
+      try {
+        const fallbackContent = await callOpenRouterFallback(userMessage);
+        const result = JSON.parse(fallbackContent);
+        return NextResponse.json(result);
+      } catch (fallbackError: any) {
+        console.error('OpenRouter fallback also failed:', fallbackError);
+      }
+    }
+
     if (errorMessage.includes('API key') || errorMessage.includes('KEY_INVALID') || errorMessage.includes('invalid')) {
       return NextResponse.json(
         { error: 'Invalid API key. Please check your GEMINI_API_KEY configuration.' },
@@ -174,11 +233,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (errorMessage.includes('ResourceExhausted') || errorMessage.includes('Quota exceeded') || errorMessage.includes('429')) {
+    if (isQuotaError) {
       return NextResponse.json(
         {
           error:
-            'The Gemini API rate limit or quota has been exceeded. Please wait a moment before trying again, or check your API quotas on Google AI Studio.',
+            'The Gemini API rate limit or quota has been exceeded. Please configure OPENROUTER_API_KEY in your environment variables for automatic free open-source fallback, or wait a moment before trying again.',
         },
         { status: 429 }
       );
