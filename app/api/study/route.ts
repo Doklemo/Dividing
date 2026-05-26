@@ -76,6 +76,16 @@ async function withRetry<T>(
   throw lastError;
 }
 
+// Helper to sanitize and parse JSON response text, removing any markdown code blocks
+function cleanAndParseJSON(text: string): any {
+  let cleanText = text.trim();
+  if (cleanText.startsWith('```')) {
+    cleanText = cleanText.replace(/^```[a-zA-Z]*\s*/, '');
+    cleanText = cleanText.replace(/\s*```$/, '');
+  }
+  return JSON.parse(cleanText.trim());
+}
+
 // Helper to fetch the official scripture text if the input is a reference query (e.g. "John 3:16")
 async function fetchScriptureText(query: string): Promise<string | null> {
   const cleanQuery = query.trim();
@@ -119,7 +129,6 @@ async function callOpenRouterFallback(userMessage: string): Promise<string> {
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userMessage },
       ],
-      response_format: { type: 'json_object' },
       temperature: 0.7,
     }),
   });
@@ -203,7 +212,7 @@ export async function POST(req: NextRequest) {
       throw new Error('No content received from Gemini model');
     }
 
-    const result = JSON.parse(content);
+    const result = cleanAndParseJSON(content);
     return NextResponse.json(result);
   } catch (error: any) {
     console.error('Study API error:', error);
@@ -219,7 +228,7 @@ export async function POST(req: NextRequest) {
       console.log('Gemini rate limit exceeded. Attempting OpenRouter Llama-3-8B fallback...');
       try {
         const fallbackContent = await callOpenRouterFallback(userMessage);
-        const result = JSON.parse(fallbackContent);
+        const result = cleanAndParseJSON(fallbackContent);
         return NextResponse.json(result);
       } catch (fallbackError: any) {
         console.error('OpenRouter fallback also failed:', fallbackError);
