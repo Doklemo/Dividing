@@ -44,7 +44,7 @@ export default function ExportMenu({ study }: ExportMenuProps) {
   };
 
   return (
-    <div ref={menuRef} style={{ position: 'relative' }}>
+    <div ref={menuRef} className="export-menu-container" style={{ position: 'relative' }}>
       <button
         id="export-menu-btn"
         onClick={() => setOpen((o) => !o)}
@@ -79,6 +79,7 @@ export default function ExportMenu({ study }: ExportMenuProps) {
       {open && (
         <div
           role="menu"
+          className="export-dropdown"
           style={{
             position: 'absolute',
             top: 'calc(100% + 6px)',

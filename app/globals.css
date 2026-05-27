@@ -369,3 +369,18 @@ nav, .toolbar, .input-panel, .breakdown-panel, .card, aside, .tab-btn {
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.15);
 }
+
+/* ── Mobile Layout Adjustments ───────────────────── */
+@media (max-width: 768px) {
+  .export-menu-container {
+    position: static !important;
+  }
+  
+  .export-dropdown {
+    right: 16px !important;
+    left: 16px !important;
+    min-width: 0 !important;
+    width: auto !important;
+    top: calc(100% + 4px) !important;
+  }
+}

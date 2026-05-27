@@ -85,6 +85,7 @@ export default function HomePage() {
           backdropFilter: 'blur(10px)',
           gap: '12px',
           flexWrap: 'wrap',
+          position: 'relative',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
