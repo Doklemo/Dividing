@@ -40,7 +40,9 @@ Rules:
   - If the passage is from the New Testament (Matthew through Revelation, e.g., Matthew, John, Romans, Revelation, etc.), you MUST analyze original GREEK words (written in Greek script, e.g., λόγος, and Strong's numbers starting with 'G').
 - Provide 3-5 key original language words in the "greekWords" array matching the correct testament language (Hebrew for OT, Greek for NT).
 - Provide at least 3 cross references
-- Include 4-6 commentary perspectives from respected scholars (e.g., Matthew Henry, John Calvin, Charles Spurgeon, N.T. Wright, etc.)
+- Include 4-6 commentary perspectives from respected scholars:
+  - For New Testament scriptures, you MUST include a commentary perspective from "Kenneth Wuest" (source: "Word Studies in the Greek New Testament") focusing on word studies and Greek translation nuances, and it MUST be the very first item in the "commentaries" array.
+  - Other perspectives can include scholars like Matthew Henry, John Calvin, Charles Spurgeon, Augustine, N.T. Wright, etc.
 - Be thorough, detailed, scholarly, and spiritually enriching`;
 
 // Retry with exponential backoff for 429 or 5xx errors
