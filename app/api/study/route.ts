@@ -5,12 +5,12 @@ const SYSTEM_PROMPT = `You are a deeply knowledgeable Bible study assistant help
 
 For each passage provided, return a JSON object with this EXACT structure:
 {
-  "overview": "A comprehensive 2-3 paragraph theological overview of the passage, covering its meaning, context, and significance",
+  "overview": "A concise 1-2 paragraph theological overview of the passage, covering its meaning, context, and significance",
   "crossReferences": [
     {
       "reference": "Book Chapter:Verse",
       "text": "The actual verse text (ESV or NIV)",
-      "connection": "Why this cross-reference connects to the passage being studied"
+      "connection": "Concise explanation of why this cross-reference connects to the passage being studied"
     }
   ],
   "greekWords": [
@@ -18,17 +18,17 @@ For each passage provided, return a JSON object with this EXACT structure:
       "word": "Greek/Hebrew word in original script (Greek for New Testament, Hebrew for Old Testament)",
       "englishWord": "English word/phrase being translated from the scripture text",
       "transliteration": "English transliteration",
-      "definition": "Full lexical definition and theological significance",
+      "definition": "Lexical definition and theological significance",
       "strongsNumber": "G1234 (Greek) or H1234 (Hebrew)",
-      "usage": "How this word is used in the passage's context"
+      "usage": "Concise explanation of how this word is used in the passage's context"
     }
   ],
-  "historicalContext": "2-3 paragraphs covering the historical, cultural, geographical, and social background of the passage",
+  "historicalContext": "1-2 concise paragraphs covering the historical, cultural, geographical, and social background of the passage",
   "commentaries": [
     {
       "author": "Commentator name",
       "source": "Commentary title",
-      "text": "A scholarly insight or quote about this passage"
+      "text": "A concise, scholarly insight or quote about this passage"
     }
   ]
 }
@@ -38,7 +38,7 @@ Rules:
 - Provide at least 3 cross references
 - Include 3-5 key Greek/Hebrew words (Greek words if New Testament, Hebrew words if Old Testament) that are significant in the scripture text
 - Include 4-6 commentary perspectives from respected scholars (e.g., Matthew Henry, John Calvin, Charles Spurgeon, N.T. Wright, etc.)
-- Be thorough, scholarly, and spiritually enriching`;
+- Be concise, direct, and avoid wordiness while maintaining scholarly and theological depth`;
 
 // Retry with exponential backoff for 429 or 5xx errors
 async function withRetry<T>(
@@ -86,6 +86,8 @@ function cleanAndParseJSON(text: string): any {
   return JSON.parse(cleanText.trim());
 }
 
+const scriptureCache = new Map<string, string>();
+
 // Helper to fetch the official scripture text if the input is a reference query (e.g. "John 3:16")
 async function fetchScriptureText(query: string): Promise<string | null> {
   const cleanQuery = query.trim();
@@ -94,12 +96,18 @@ async function fetchScriptureText(query: string): Promise<string | null> {
     return null;
   }
   
+  if (scriptureCache.has(cleanQuery)) {
+    return scriptureCache.get(cleanQuery) || null;
+  }
+  
   try {
     const res = await fetch(`https://bible-api.com/${encodeURIComponent(cleanQuery)}`);
     if (!res.ok) return null;
     const data = await res.json();
     if (data && data.text) {
-      return `${data.reference} (${data.translation_name})\n\n${data.text.trim()}`;
+      const text = `${data.reference} (${data.translation_name})\n\n${data.text.trim()}`;
+      scriptureCache.set(cleanQuery, text);
+      return text;
     }
     return null;
   } catch (e) {
@@ -198,7 +206,7 @@ export async function POST(req: NextRequest) {
         contents: [{ role: 'user', parts: [{ text: userMessage }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          temperature: 0.7,
+          temperature: 0.3,
           thinkingConfig: {
             thinkingBudget: 0,
           },
