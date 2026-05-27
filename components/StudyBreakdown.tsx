@@ -278,7 +278,7 @@ export default function StudyBreakdown({ result, isLoading, scripture }: StudyBr
       {/* Panel header */}
       <div
         style={{
-          padding: '20px 24px 0',
+          padding: '20px 24px 12px',
           borderBottom: '1px solid var(--border-mid)',
         }}
       >
