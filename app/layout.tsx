@@ -106,14 +106,14 @@ export default function RootLayout({
         {/* Footer */}
         <footer
           style={{
-            height: '36px',
+            height: '48px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderTop: '1px solid var(--border-subtle)',
             background: 'var(--bg-page)',
             color: 'var(--text-muted)',
-            fontSize: '11px',
+            fontSize: '13px',
             transition: 'background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease',
             zIndex: 10,
           }}
