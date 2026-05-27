@@ -37,7 +37,7 @@ Rules:
 - Always return valid JSON only — no markdown, no extra text
 - Provide at least 3 cross references
 - Include 3-5 key Greek/Hebrew words (Greek words if New Testament, Hebrew words if Old Testament) that are significant in the scripture text
-- Include 2-3 commentary perspectives from respected scholars (e.g., Matthew Henry, John Calvin, Charles Spurgeon, N.T. Wright, etc.)
+- Include 4-6 commentary perspectives from respected scholars (e.g., Matthew Henry, John Calvin, Charles Spurgeon, N.T. Wright, etc.)
 - Be thorough, scholarly, and spiritually enriching`;
 
 // Retry with exponential backoff for 429 or 5xx errors
