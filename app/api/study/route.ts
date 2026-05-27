@@ -15,11 +15,11 @@ For each passage provided, return a JSON object with this EXACT structure:
   ],
   "greekWords": [
     {
-      "word": "Greek/Hebrew word in original script (Greek for New Testament, Hebrew for Old Testament)",
+      "word": "Original Hebrew/Greek word in its original script (Hebrew script for Old Testament, Greek script for New Testament)",
       "englishWord": "English word/phrase being translated from the scripture text",
       "transliteration": "English transliteration",
       "definition": "Lexical definition and theological significance",
-      "strongsNumber": "G1234 (Greek) or H1234 (Hebrew)",
+      "strongsNumber": "H1234 (Hebrew) or G1234 (Greek)",
       "usage": "Concise explanation of how this word is used in the passage's context"
     }
   ],
@@ -35,8 +35,11 @@ For each passage provided, return a JSON object with this EXACT structure:
 
 Rules:
 - Always return valid JSON only — no markdown, no extra text
+- Identify whether the passage is from the Old Testament or the New Testament:
+  - If the passage is from the Old Testament (Genesis through Malachi, e.g., Genesis, Deuteronomy, Psalms, Isaiah, etc.), you MUST analyze original HEBREW words (written in Hebrew script, e.g., תּוֹרָה, and Strong's numbers starting with 'H').
+  - If the passage is from the New Testament (Matthew through Revelation, e.g., Matthew, John, Romans, Revelation, etc.), you MUST analyze original GREEK words (written in Greek script, e.g., λόγος, and Strong's numbers starting with 'G').
+- Provide 3-5 key original language words in the "greekWords" array matching the correct testament language (Hebrew for OT, Greek for NT).
 - Provide at least 3 cross references
-- Include 3-5 key Greek/Hebrew words (Greek words if New Testament, Hebrew words if Old Testament) that are significant in the scripture text
 - Include 4-6 commentary perspectives from respected scholars (e.g., Matthew Henry, John Calvin, Charles Spurgeon, N.T. Wright, etc.)
 - Be concise, direct, and avoid wordiness while maintaining scholarly and theological depth`;
 
