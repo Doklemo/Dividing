@@ -137,7 +137,7 @@ async function callOpenRouterFallback(userMessage: string): Promise<string> {
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userMessage },
       ],
-      temperature: 0.7,
+      temperature: 0.3,
     }),
   });
 
