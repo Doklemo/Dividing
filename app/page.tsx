@@ -249,7 +249,7 @@ export default function HomePage() {
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '0',
-          height: 'calc(100vh - 60px - 52px)',
+          height: 'calc(100vh - 60px - 52px - 36px)',
           overflow: 'hidden',
         }}
       >

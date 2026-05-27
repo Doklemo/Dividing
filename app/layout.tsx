@@ -43,7 +43,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>
+      <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', margin: 0 }}>
         {/* Navigation */}
         <nav
           style={{
@@ -95,11 +95,48 @@ export default function RootLayout({
           style={{
             position: 'relative',
             paddingTop: '60px',
-            minHeight: '100vh',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           {children}
         </main>
+
+        {/* Footer */}
+        <footer
+          style={{
+            height: '36px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderTop: '1px solid var(--border-subtle)',
+            background: 'var(--bg-page)',
+            color: 'var(--text-muted)',
+            fontSize: '11px',
+            transition: 'background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease',
+            zIndex: 10,
+          }}
+        >
+          <span>
+            Designed and Built by{' '}
+            <a
+              href="https://ayodeji-lemo-portfolio.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline"
+              style={{
+                color: 'var(--brand-accent)',
+                textDecoration: 'none',
+                fontWeight: 500,
+                transition: 'color 0.2s ease',
+              }}
+            >
+              Ayodeji Lemo
+            </a>
+            .
+          </span>
+        </footer>
       </body>
     </html>
   );
