@@ -79,7 +79,6 @@ function OverviewTab({ text }: { text: string }) {
       {text.split('\n\n').filter(Boolean).map((para, i) => (
         <p
           key={i}
-          className="font-display"
           style={{
             fontSize: '15px',
             lineHeight: '1.85',
