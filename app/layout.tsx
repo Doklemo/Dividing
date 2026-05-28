@@ -133,7 +133,7 @@ export default function RootLayout({
             borderBottom: '1px solid var(--border-mid)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', height: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', height: '32px' }}>
             <img
               src="/logo.png"
               alt="Dividing Logo"
@@ -145,18 +145,24 @@ export default function RootLayout({
                 filter: 'var(--logo-filter)',
               }}
             />
+            <span
+              style={{
+                color: 'var(--text-muted)',
+                fontSize: '12px',
+                fontWeight: 500,
+                borderLeft: '1px solid var(--border-mid)',
+                paddingLeft: '12px',
+                height: '14px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              2 Tim 2:15
+            </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <ThemeToggle />
-            <a
-              href="https://2timothy2-15.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: 'var(--text-muted)', fontSize: '12px', textDecoration: 'none' }}
-            >
-              2 Tim 2:15
-            </a>
           </div>
         </nav>
 
