@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/api/',
     },
-    sitemap: 'https://dividing.app/sitemap.xml',
+    sitemap: 'https://dividing.vercel.app/sitemap.xml',
   };
 }

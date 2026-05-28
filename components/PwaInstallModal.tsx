@@ -198,7 +198,7 @@ export default function PwaInstallModal() {
                   color: 'var(--text-muted)',
                 }}
               >
-                dividing.app &middot; Free Web App
+                dividing.vercel.app &middot; Free Web App
               </span>
             </div>
           </div>

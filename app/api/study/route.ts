@@ -133,7 +133,7 @@ async function callOpenRouterFallback(userMessage: string): Promise<string> {
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${openRouterKey}`,
-      'HTTP-Referer': 'https://dividing.app',
+      'HTTP-Referer': 'https://dividing.vercel.app',
       'X-Title': 'Dividing Bible Study',
     },
     body: JSON.stringify({

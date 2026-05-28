@@ -4,7 +4,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import PwaInstallModal from '@/components/PwaInstallModal';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://dividing.app'),
+  metadataBase: new URL('https://dividing.vercel.app'),
   title: 'Dividing — AI-Powered Bible Study',
   description:
     'Deeply understand scripture through AI-powered contextual, theological, and scholarly insights. Paste any Bible verse and get instant study breakdowns.',
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     title: 'Dividing — AI-Powered Bible Study',
     description:
       'Deeply understand scripture through AI-powered contextual, theological, and scholarly insights. Paste any Bible verse and get instant study breakdowns.',
-    url: 'https://dividing.app',
+    url: 'https://dividing.vercel.app',
     siteName: 'Dividing',
     locale: 'en_US',
     type: 'website',
@@ -94,7 +94,7 @@ export default function RootLayout({
               '@context': 'https://schema.org',
               '@type': 'WebApplication',
               'name': 'Dividing',
-              'url': 'https://dividing.app',
+              'url': 'https://dividing.vercel.app',
               'description': 'Deeply understand scripture through AI-powered contextual, theological, and scholarly insights. Paste any Bible verse and get instant study breakdowns.',
               'applicationCategory': 'EducationalApplication',
               'operatingSystem': 'All',
