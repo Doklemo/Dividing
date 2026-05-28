@@ -67,10 +67,20 @@ export default function RootLayout({
             `,
           }}
         />
-        {/* Service Worker Registration */}
+        {/* Service Worker Registration + Early PWA Prompt Capture */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              // Capture beforeinstallprompt EARLY — before React hydrates.
+              // This prevents a race condition where the event fires before
+              // the PwaInstallModal component mounts its listener.
+              window.__pwaPrompt = null;
+              window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                window.__pwaPrompt = e;
+                console.log('[PWA] beforeinstallprompt captured early');
+              });
+
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').then(

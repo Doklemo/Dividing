@@ -1,29 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+declare global {
+  interface Window {
+    __pwaPrompt: any;
+  }
+}
 
 export default function PwaInstallModal() {
   const [show, setShow] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
-  const [showAndroidTip, setShowAndroidTip] = useState(false);
+  const promptRef = useRef<any>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Register Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then((reg) => console.log('Service Worker registered on mount:', reg.scope))
-        .catch((err) => console.error('Service Worker registration failed:', err));
-    }
-
     // Check if already installed (standalone mode)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone;
     if (isStandalone) return;
 
     // Check user-agent to see if iOS
-    const isLocalIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isLocalIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+      !(window as any).MSStream;
     setIsIOS(isLocalIOS);
 
     // 1. For iOS: show the Safari instructions modal after 3 seconds
@@ -34,52 +37,66 @@ export default function PwaInstallModal() {
       return () => clearTimeout(timer);
     }
 
-    // 2. For Android/Chrome: listen for the PWA prompt event
+    // 2. For Android/Chrome: Check if beforeinstallprompt was already
+    //    captured by the early head script (race condition fix).
+    if (window.__pwaPrompt) {
+      console.log('[PWA Modal] Found early-captured prompt on window.__pwaPrompt');
+      promptRef.current = window.__pwaPrompt;
+      setDeferredPrompt(window.__pwaPrompt);
+    }
+
+    // 3. Also listen for late-firing beforeinstallprompt (edge case fallback)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
+      console.log('[PWA Modal] beforeinstallprompt fired after mount');
+      promptRef.current = e;
       setDeferredPrompt(e);
-      // Show the modal after 2 seconds if prompt event is received
-      const timer = setTimeout(() => {
-        setShow(true);
-      }, 2000);
-      return () => clearTimeout(timer);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // 3. Fallback: Always display the modal on mobile viewports after 3 seconds,
-    // even if beforeinstallprompt hasn't fired yet (ensures visibility on every refresh)
+    // 4. Show the modal after a short delay on mobile viewports
     const isMobileViewport = window.innerWidth <= 768;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     if (isMobileViewport) {
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setShow(true);
       }, 3000);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      };
     }
 
     return () => {
+      if (timer) clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
 
   const handleInstallClick = async () => {
-    if (deferredPrompt) {
+    // Use the ref for the most up-to-date prompt (avoids stale closure issues)
+    const prompt = promptRef.current || deferredPrompt || window.__pwaPrompt;
+
+    if (prompt) {
       setShow(false);
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`PWA install prompt outcome: ${outcome}`);
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
+      try {
+        prompt.prompt();
+        const { outcome } = await prompt.userChoice;
+        console.log(`[PWA] Install prompt outcome: ${outcome}`);
+        if (outcome === 'accepted') {
+          promptRef.current = null;
+          setDeferredPrompt(null);
+          window.__pwaPrompt = null;
+        }
+      } catch (err) {
+        console.error('[PWA] Error triggering install prompt:', err);
       }
     } else {
-      // If prompt event is not ready (e.g. testing local connection or Chrome throttling),
-      // show a clean inline tip rather than opening a second instructions modal.
+      // Last resort: guide user to browser menu
+      console.log('[PWA] No install prompt available — showing manual instructions');
+      // Show inline tip
       setShowAndroidTip(true);
     }
   };
+
+  const [showAndroidTip, setShowAndroidTip] = useState(false);
 
   const handleDismiss = () => {
     setShow(false);
