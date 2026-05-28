@@ -11,23 +11,41 @@ export default function PwaInstallModal() {
     // 1. Prevent running on SSR
     if (typeof window === 'undefined') return;
 
+    // Register Service Worker immediately on client mount to satisfy PWA criteria
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => console.log('Service Worker registered on mount:', reg.scope))
+        .catch((err) => console.error('Service Worker registration failed:', err));
+    }
+
+    // Force show check (useful for debugging/testing on mobile or desktop)
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceShow = urlParams.get('pwa-test') === 'true' || urlParams.get('install') === 'true';
+
     // 2. Check if already installed (standalone mode)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isStandalone) return;
+    if (isStandalone && !forceShow) return;
 
     // 3. Check if user previously dismissed it in this session / localStorage
     const hasDismissed = localStorage.getItem('pwa-install-dismissed');
-    if (hasDismissed) return;
+    if (hasDismissed && !forceShow) return;
 
     // 4. Check user-agent to see if iOS
     const isLocalIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isLocalIOS);
 
+    if (forceShow) {
+      const timer = setTimeout(() => {
+        setShow(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
     // 5. Handle prompt for Chrome/Android
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Wait 3 seconds before prompting so it feels premium and doesn't interrupt instantly
+      // Wait 3 seconds before prompting so it feels premium
       const timer = setTimeout(() => {
         setShow(true);
       }, 3000);
@@ -36,11 +54,16 @@ export default function PwaInstallModal() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // 6. For iOS: show the modal after 4 seconds (since there is no event to listen to)
-    if (isLocalIOS) {
+    // 6. Fallback: If on a mobile screen and beforeinstallprompt doesn't fire after 5 seconds,
+    // show the modal anyway to guide the user on manual installation.
+    const isMobileViewport = window.innerWidth <= 768;
+    if (isMobileViewport) {
       const timer = setTimeout(() => {
-        setShow(true);
-      }, 4000);
+        setShow((alreadyShowing) => {
+          if (alreadyShowing) return true;
+          return true;
+        });
+      }, 5000);
       return () => {
         clearTimeout(timer);
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -61,7 +84,6 @@ export default function PwaInstallModal() {
     if (outcome === 'accepted') {
       setDeferredPrompt(null);
     } else {
-      // If rejected, set dismissed so we don't annoy them
       localStorage.setItem('pwa-install-dismissed', 'true');
     }
   };
@@ -198,9 +220,11 @@ export default function PwaInstallModal() {
                 margin: 0,
               }}
             >
-              {!isIOS
+              {isIOS
+                ? 'Add Dividing to your home screen for a fullscreen layout, offline study access, and quick app launch.'
+                : deferredPrompt
                 ? 'Install this application on your home screen for quick launch, distraction-free fullscreen view, and reliable offline bible study.'
-                : 'Add Dividing to your home screen for a fullscreen layout, offline study access, and quick app launch.'}
+                : 'Add Dividing to your home screen to enjoy a full-screen Bible study experience, offline access, and fast startup.'}
             </p>
 
             {/* iOS Instructions */}
@@ -290,11 +314,71 @@ export default function PwaInstallModal() {
                 </div>
               </div>
             )}
+
+            {/* Android / Other Browser Fallback Instructions */}
+            {!isIOS && !deferredPrompt && (
+              <div
+                style={{
+                  background: 'var(--bg-input)',
+                  border: '1px solid var(--border-mid)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  fontSize: '12px',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <span
+                    style={{
+                      background: 'var(--bg-tab-active)',
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      fontWeight: '700',
+                      flexShrink: 0,
+                    }}
+                  >
+                    1
+                  </span>
+                  <span>
+                    Tap your browser's menu button (usually the <strong>three dots ⋮</strong> or <strong>menu ⋯</strong> icon in the corner).
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <span
+                    style={{
+                      background: 'var(--bg-tab-active)',
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      fontWeight: '700',
+                      flexShrink: 0,
+                    }}
+                  >
+                    2
+                  </span>
+                  <span>
+                    Select <strong>Add to Home Screen</strong> or <strong>Install App</strong>.
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '4px' }}>
-            {!isIOS ? (
+            {deferredPrompt ? (
               <>
                 <button
                   onClick={handleDismiss}
