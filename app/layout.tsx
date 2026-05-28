@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import ThemeToggle from '@/components/ThemeToggle';
+import PwaInstallModal from '@/components/PwaInstallModal';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://dividing.app'),
@@ -206,6 +207,7 @@ export default function RootLayout({
             .
           </span>
         </footer>
+        <PwaInstallModal />
       </body>
     </html>
   );
