@@ -1,19 +1,7 @@
-const CACHE_NAME = 'dividing-cache-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/manifest.webmanifest',
-  '/icon.png',
-  '/apple-icon.png',
-  '/icon-192.png',
-  '/icon-512.png',
-];
+const CACHE_NAME = 'dividing-cache-v3';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
+  // Activate immediately without waiting for other instances to close
   self.skipWaiting();
 });
 
@@ -23,6 +11,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
+            console.log('Clearing old cache:', cache);
             return caches.delete(cache);
           }
         })
@@ -33,7 +22,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Skip API calls and non-GET requests (e.g. POST to /api/study)
+  // Skip caching for API queries and non-GET requests
   if (event.request.url.includes('/api/') || event.request.method !== 'GET') {
     return;
   }
@@ -44,7 +33,7 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
       return fetch(event.request).then((response) => {
-        // Do not cache non-ok responses or external endpoints
+        // Do not cache invalid or third-party CORS responses to prevent errors
         if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
