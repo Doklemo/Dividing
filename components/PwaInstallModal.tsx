@@ -6,64 +6,47 @@ export default function PwaInstallModal() {
   const [show, setShow] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   useEffect(() => {
     // 1. Prevent running on SSR
     if (typeof window === 'undefined') return;
 
-    // Register Service Worker immediately on client mount to satisfy PWA criteria
+    // Register Service Worker immediately on client mount
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
         .then((reg) => console.log('Service Worker registered on mount:', reg.scope))
         .catch((err) => console.error('Service Worker registration failed:', err));
     }
 
-    // Force show check (useful for debugging/testing on mobile or desktop)
-    const urlParams = new URLSearchParams(window.location.search);
-    const forceShow = urlParams.get('pwa-test') === 'true' || urlParams.get('install') === 'true';
-
     // 2. Check if already installed (standalone mode)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isStandalone && !forceShow) return;
+    if (isStandalone) return;
 
-    // 3. Check if user previously dismissed it in this session / localStorage
-    const hasDismissed = localStorage.getItem('pwa-install-dismissed');
-    if (hasDismissed && !forceShow) return;
-
-    // 4. Check user-agent to see if iOS
+    // 3. Check user-agent to see if iOS
     const isLocalIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isLocalIOS);
 
-    if (forceShow) {
-      const timer = setTimeout(() => {
-        setShow(true);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-
-    // 5. Handle prompt for Chrome/Android
+    // 4. Handle prompt for Chrome/Android
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Wait 3 seconds before prompting so it feels premium
+      // Show the modal after 2 seconds if prompt event is received
       const timer = setTimeout(() => {
         setShow(true);
-      }, 3000);
+      }, 2000);
       return () => clearTimeout(timer);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // 6. Fallback: If on a mobile screen and beforeinstallprompt doesn't fire after 5 seconds,
-    // show the modal anyway to guide the user on manual installation.
+    // 5. Fallback: If on a mobile viewport, show the modal after 3 seconds anyway
+    // (doesn't save state in localStorage so it triggers on every refresh as requested)
     const isMobileViewport = window.innerWidth <= 768;
     if (isMobileViewport) {
       const timer = setTimeout(() => {
-        setShow((alreadyShowing) => {
-          if (alreadyShowing) return true;
-          return true;
-        });
-      }, 5000);
+        setShow(true);
+      }, 3000);
       return () => {
         clearTimeout(timer);
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -76,21 +59,22 @@ export default function PwaInstallModal() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    setShow(false);
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`PWA install prompt outcome: ${outcome}`);
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
+    if (deferredPrompt) {
+      setShow(false);
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`PWA install prompt outcome: ${outcome}`);
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
     } else {
-      localStorage.setItem('pwa-install-dismissed', 'true');
+      // If deferredPrompt is not ready yet, show manual browser menu instructions
+      setShowInstructions(true);
     }
   };
 
   const handleDismiss = () => {
     setShow(false);
-    localStorage.setItem('pwa-install-dismissed', 'true');
   };
 
   if (!show) return null;
@@ -222,9 +206,7 @@ export default function PwaInstallModal() {
             >
               {isIOS
                 ? 'Add Dividing to your home screen for a fullscreen layout, offline study access, and quick app launch.'
-                : deferredPrompt
-                ? 'Install this application on your home screen for quick launch, distraction-free fullscreen view, and reliable offline bible study.'
-                : 'Add Dividing to your home screen to enjoy a full-screen Bible study experience, offline access, and fast startup.'}
+                : 'Install this application on your home screen for quick launch, distraction-free fullscreen view, and reliable offline bible study.'}
             </p>
 
             {/* iOS Instructions */}
@@ -315,8 +297,8 @@ export default function PwaInstallModal() {
               </div>
             )}
 
-            {/* Android / Other Browser Fallback Instructions */}
-            {!isIOS && !deferredPrompt && (
+            {/* Android / Other Browser Fallback Instructions (expanded when Install is clicked but prompt not ready) */}
+            {!isIOS && showInstructions && (
               <div
                 style={{
                   background: 'var(--bg-input)',
@@ -328,8 +310,12 @@ export default function PwaInstallModal() {
                   gap: '12px',
                   fontSize: '12px',
                   color: 'var(--text-secondary)',
+                  animation: 'pwa-fade-in 0.3s ease forwards',
                 }}
               >
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '-4px' }}>
+                  To complete installation manually:
+                </div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                   <span
                     style={{
@@ -378,7 +364,19 @@ export default function PwaInstallModal() {
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '4px' }}>
-            {deferredPrompt ? (
+            {isIOS ? (
+              <button
+                className="btn-primary"
+                onClick={handleDismiss}
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  fontSize: '13px',
+                }}
+              >
+                Got It
+              </button>
+            ) : (
               <>
                 <button
                   onClick={handleDismiss}
@@ -416,21 +414,9 @@ export default function PwaInstallModal() {
                     fontSize: '13px',
                   }}
                 >
-                  Install App
+                  {showInstructions ? 'Got It' : 'Install App'}
                 </button>
               </>
-            ) : (
-              <button
-                className="btn-primary"
-                onClick={handleDismiss}
-                style={{
-                  width: '100%',
-                  height: '46px',
-                  fontSize: '13px',
-                }}
-              >
-                Got It
-              </button>
             )}
           </div>
         </div>
@@ -446,7 +432,7 @@ export default function PwaInstallModal() {
           to { transform: translateY(0); }
         }
         @media (min-width: 769px) {
-          /* Hide on desktop size as requested by user */
+          /* Hide on desktop size */
           .pwa-backdrop {
             display: none !important;
           }
