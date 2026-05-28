@@ -6,32 +6,38 @@ export default function PwaInstallModal() {
   const [show, setShow] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(false);
 
   useEffect(() => {
-    // 1. Prevent running on SSR
     if (typeof window === 'undefined') return;
 
-    // Register Service Worker immediately on client mount
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
         .then((reg) => console.log('Service Worker registered on mount:', reg.scope))
         .catch((err) => console.error('Service Worker registration failed:', err));
     }
 
-    // 2. Check if already installed (standalone mode)
+    // Check if already installed (standalone mode)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     if (isStandalone) return;
 
-    // 3. Check user-agent to see if iOS
+    // Check user-agent to see if iOS
     const isLocalIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isLocalIOS);
 
-    // 4. Handle prompt for Chrome/Android
+    // 1. For iOS: show the Safari instructions modal after 3 seconds
+    if (isLocalIOS) {
+      const timer = setTimeout(() => {
+        setShow(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+
+    // 2. For Android/Chrome: only show when the beforeinstallprompt PWA event fires
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Show the modal after 2 seconds if prompt event is received
+      // Show the modal after 2 seconds
       const timer = setTimeout(() => {
         setShow(true);
       }, 2000);
@@ -39,20 +45,6 @@ export default function PwaInstallModal() {
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // 5. Fallback: If on a mobile viewport, show the modal after 3 seconds anyway
-    // (doesn't save state in localStorage so it triggers on every refresh as requested)
-    const isMobileViewport = window.innerWidth <= 768;
-    if (isMobileViewport) {
-      const timer = setTimeout(() => {
-        setShow(true);
-      }, 3000);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      };
-    }
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
@@ -67,9 +59,6 @@ export default function PwaInstallModal() {
       if (outcome === 'accepted') {
         setDeferredPrompt(null);
       }
-    } else {
-      // If deferredPrompt is not ready yet, show manual browser menu instructions
-      setShowInstructions(true);
     }
   };
 
@@ -296,70 +285,6 @@ export default function PwaInstallModal() {
                 </div>
               </div>
             )}
-
-            {/* Android / Other Browser Fallback Instructions (expanded when Install is clicked but prompt not ready) */}
-            {!isIOS && showInstructions && (
-              <div
-                style={{
-                  background: 'var(--bg-input)',
-                  border: '1px solid var(--border-mid)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                  fontSize: '12px',
-                  color: 'var(--text-secondary)',
-                  animation: 'pwa-fade-in 0.3s ease forwards',
-                }}
-              >
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '-4px' }}>
-                  To complete installation manually:
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <span
-                    style={{
-                      background: 'var(--bg-tab-active)',
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '10px',
-                      fontWeight: '700',
-                      flexShrink: 0,
-                    }}
-                  >
-                    1
-                  </span>
-                  <span>
-                    Tap your browser's menu button (usually the <strong>three dots ⋮</strong> or <strong>menu ⋯</strong> icon in the corner).
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <span
-                    style={{
-                      background: 'var(--bg-tab-active)',
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '10px',
-                      fontWeight: '700',
-                      flexShrink: 0,
-                    }}
-                  >
-                    2
-                  </span>
-                  <span>
-                    Select <strong>Add to Home Screen</strong> or <strong>Install App</strong>.
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Action buttons */}
@@ -414,7 +339,7 @@ export default function PwaInstallModal() {
                     fontSize: '13px',
                   }}
                 >
-                  {showInstructions ? 'Got It' : 'Install App'}
+                  Install App
                 </button>
               </>
             )}
