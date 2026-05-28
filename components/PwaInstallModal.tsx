@@ -6,6 +6,7 @@ export default function PwaInstallModal() {
   const [show, setShow] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [showAndroidTip, setShowAndroidTip] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -33,11 +34,11 @@ export default function PwaInstallModal() {
       return () => clearTimeout(timer);
     }
 
-    // 2. For Android/Chrome: only show when the beforeinstallprompt PWA event fires
+    // 2. For Android/Chrome: listen for the PWA prompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Show the modal after 2 seconds
+      // Show the modal after 2 seconds if prompt event is received
       const timer = setTimeout(() => {
         setShow(true);
       }, 2000);
@@ -45,6 +46,20 @@ export default function PwaInstallModal() {
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // 3. Fallback: Always display the modal on mobile viewports after 3 seconds,
+    // even if beforeinstallprompt hasn't fired yet (ensures visibility on every refresh)
+    const isMobileViewport = window.innerWidth <= 768;
+    if (isMobileViewport) {
+      const timer = setTimeout(() => {
+        setShow(true);
+      }, 3000);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      };
+    }
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
@@ -59,11 +74,16 @@ export default function PwaInstallModal() {
       if (outcome === 'accepted') {
         setDeferredPrompt(null);
       }
+    } else {
+      // If prompt event is not ready (e.g. testing local connection or Chrome throttling),
+      // show a clean inline tip rather than opening a second instructions modal.
+      setShowAndroidTip(true);
     }
   };
 
   const handleDismiss = () => {
     setShow(false);
+    setShowAndroidTip(false);
   };
 
   if (!show) return null;
@@ -288,60 +308,78 @@ export default function PwaInstallModal() {
           </div>
 
           {/* Action buttons */}
-          <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '4px' }}>
-            {isIOS ? (
-              <button
-                className="btn-primary"
-                onClick={handleDismiss}
-                style={{
-                  width: '100%',
-                  height: '46px',
-                  fontSize: '13px',
-                }}
-              >
-                Got It
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={handleDismiss}
-                  style={{
-                    flex: 1,
-                    height: '46px',
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-mid)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--text-secondary)',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
-                  }}
-                >
-                  Maybe Later
-                </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: '4px' }}>
+            <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+              {isIOS ? (
                 <button
                   className="btn-primary"
-                  onClick={handleInstallClick}
+                  onClick={handleDismiss}
                   style={{
-                    flex: 1,
+                    width: '100%',
                     height: '46px',
                     fontSize: '13px',
                   }}
                 >
-                  Install App
+                  Got It
                 </button>
-              </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleDismiss}
+                    style={{
+                      flex: 1,
+                      height: '46px',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border-mid)',
+                      borderRadius: 'var(--radius-md)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+                    }}
+                  >
+                    Maybe Later
+                  </button>
+                  <button
+                    className="btn-primary"
+                    onClick={handleInstallClick}
+                    style={{
+                      flex: 1,
+                      height: '46px',
+                      fontSize: '13px',
+                    }}
+                  >
+                    Install App
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Inline Hint Fallback (displays underneath the buttons in the same card) */}
+            {!isIOS && showAndroidTip && (
+              <p
+                style={{
+                  fontSize: '12px',
+                  lineHeight: '1.5',
+                  color: 'var(--brand-accent)',
+                  textAlign: 'center',
+                  margin: '8px 0 0 0',
+                  animation: 'pwa-fade-in 0.2s ease forwards',
+                }}
+              >
+                Tip: Tap your browser's menu (<strong>⋮</strong> or <strong>⋯</strong>) and select <strong>Add to Home Screen</strong>.
+              </p>
             )}
           </div>
         </div>
