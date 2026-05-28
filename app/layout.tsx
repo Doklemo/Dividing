@@ -3,14 +3,38 @@ import './globals.css';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://dividing.app'),
   title: 'Dividing — AI-Powered Bible Study',
   description:
     'Deeply understand scripture through AI-powered contextual, theological, and scholarly insights. Paste any Bible verse and get instant study breakdowns.',
-  keywords: 'Bible study, scripture, AI, theology, Greek words, cross references, commentaries',
+  keywords: 'Bible study, scripture analysis, AI Bible study, theology, Greek word study, Hebrew word study, cross references, commentaries, Wuest commentary, 2 Timothy 2:15, verse analysis, Bible breakdown',
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     title: 'Dividing — AI-Powered Bible Study',
-    description: 'Deeply understand scripture with AI-powered insights.',
+    description:
+      'Deeply understand scripture through AI-powered contextual, theological, and scholarly insights. Paste any Bible verse and get instant study breakdowns.',
+    url: 'https://dividing.app',
+    siteName: 'Dividing',
+    locale: 'en_US',
     type: 'website',
+    images: [
+      {
+        url: '/icon-512.png',
+        width: 512,
+        height: 512,
+        alt: 'Dividing Logo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Dividing — AI-Powered Bible Study',
+    description:
+      'Deeply understand scripture through AI-powered contextual, theological, and scholarly insights. Paste any Bible verse and get instant study breakdowns.',
+    images: ['/icon-512.png'],
+    creator: '@ayodejilemo',
   },
 };
 
@@ -40,6 +64,51 @@ export default function RootLayout({
                 } catch (e) {}
               })();
             `,
+          }}
+        />
+        {/* Service Worker Registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(
+                    function(reg) {
+                      console.log('Service Worker registered with scope:', reg.scope);
+                    },
+                    function(err) {
+                      console.error('Service Worker registration failed:', err);
+                    }
+                  );
+                });
+              }
+            `,
+          }}
+        />
+        {/* JSON-LD Structured Schema Markup */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebApplication',
+              'name': 'Dividing',
+              'url': 'https://dividing.app',
+              'description': 'Deeply understand scripture through AI-powered contextual, theological, and scholarly insights. Paste any Bible verse and get instant study breakdowns.',
+              'applicationCategory': 'EducationalApplication',
+              'operatingSystem': 'All',
+              'browserRequirements': 'Requires HTML5 compatible browser',
+              'creator': {
+                '@type': 'Person',
+                'name': 'Ayodeji Lemo',
+                'url': 'https://ayodeji-lemo-portfolio.vercel.app/'
+              },
+              'offers': {
+                '@type': 'Offer',
+                'price': '0',
+                'priceCurrency': 'USD'
+              }
+            }),
           }}
         />
       </head>
