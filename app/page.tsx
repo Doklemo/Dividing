@@ -3,24 +3,36 @@
 import { useState, useEffect, useCallback } from 'react';
 import ScriptureInput from '@/components/ScriptureInput';
 import StudyBreakdown from '@/components/StudyBreakdown';
+import TopicBreakdown from '@/components/TopicBreakdown';
 import SavedStudies from '@/components/SavedStudies';
 import ExportMenu from '@/components/ExportMenu';
-import { StudyResult, SavedStudy } from '@/types/study';
-import { saveStudy, getAllStudies } from '@/lib/storage';
+import { StudyResult, SavedStudy, TopicStudyResult, SavedTopicStudy, StudyMode } from '@/types/study';
+import { saveStudy, getAllStudies, saveTopicStudy, getAllTopicStudies } from '@/lib/storage';
 
 export default function HomePage() {
+  const [studyMode, setStudyMode] = useState<StudyMode>('verse');
   const [scripture, setScripture] = useState('');
   const [result, setResult] = useState<StudyResult | null>(null);
+  const [topic, setTopic] = useState('');
+  const [topicResult, setTopicResult] = useState<TopicStudyResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedStudies, setSavedStudies] = useState<SavedStudy[]>([]);
+  const [savedTopicStudies, setSavedTopicStudies] = useState<SavedTopicStudy[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentStudy, setCurrentStudy] = useState<SavedStudy | null>(null);
+  const [currentTopicStudy, setCurrentTopicStudy] = useState<SavedTopicStudy | null>(null);
   const [mobileView, setMobileView] = useState<'input' | 'breakdown'>('input');
 
   // Load saved studies on mount
   useEffect(() => {
     setSavedStudies(getAllStudies());
+    setSavedTopicStudies(getAllTopicStudies());
+  }, []);
+
+  const handleModeChange = useCallback((mode: StudyMode) => {
+    setStudyMode(mode);
+    setError(null);
   }, []);
 
   const handleStudy = useCallback(async (text: string) => {
@@ -57,10 +69,62 @@ export default function HomePage() {
     }
   }, []);
 
+  const handleTopicStudy = useCallback(async (topicText: string) => {
+    setTopic(topicText);
+    setIsLoading(true);
+    setError(null);
+    setTopicResult(null);
+    setCurrentTopicStudy(null);
+    setMobileView('breakdown');
+
+    try {
+      const res = await fetch('/api/topic-study', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: topicText }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate topic study');
+      }
+
+      const data: TopicStudyResult = await res.json();
+      setTopicResult(data);
+
+      // Auto-save
+      const saved = saveTopicStudy(topicText, data);
+      setCurrentTopicStudy(saved);
+      setSavedTopicStudies((prev) => [saved, ...prev]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handleSubmit = useCallback((text: string) => {
+    if (studyMode === 'verse') {
+      handleStudy(text);
+    } else {
+      handleTopicStudy(text);
+    }
+  }, [studyMode, handleStudy, handleTopicStudy]);
+
   const handleLoadStudy = useCallback((study: SavedStudy) => {
+    setStudyMode('verse');
     setScripture(study.scripture);
     setResult(study.result);
     setCurrentStudy(study);
+    setError(null);
+    setMobileView('breakdown');
+  }, []);
+
+  const handleLoadTopicStudy = useCallback((study: SavedTopicStudy) => {
+    setStudyMode('topic');
+    setTopic(study.topic);
+    setTopicResult(study.result);
+    setCurrentTopicStudy(study);
     setError(null);
     setMobileView('breakdown');
   }, []);
@@ -69,6 +133,14 @@ export default function HomePage() {
     setSavedStudies((prev) => prev.filter((s) => s.key !== key));
     if (currentStudy?.key === key) setCurrentStudy(null);
   }, [currentStudy]);
+
+  const handleDeleteTopicStudy = useCallback((key: string) => {
+    setSavedTopicStudies((prev) => prev.filter((s) => s.key !== key));
+    if (currentTopicStudy?.key === key) setCurrentTopicStudy(null);
+  }, [currentTopicStudy]);
+
+  const activeResult = studyMode === 'verse' ? result : topicResult;
+  const totalSaved = savedStudies.length + savedTopicStudies.length;
 
   return (
     <>
@@ -124,7 +196,7 @@ export default function HomePage() {
               <span>Back</span>
             </button>
           )}
-          {result && (
+          {activeResult && (
             <span className="badge badge-green animate-fade-up">
               ✓ Study complete
             </span>
@@ -133,7 +205,7 @@ export default function HomePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="pulse-dot" />
               <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                AI is studying your scripture…
+                {studyMode === 'verse' ? 'AI is studying your scripture…' : 'AI is exploring this topic…'}
               </span>
             </div>
           )}
@@ -154,7 +226,7 @@ export default function HomePage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {result && mobileView === 'input' && (
+          {activeResult && mobileView === 'input' && (
             <button
               className="mobile-view-breakdown-btn"
               onClick={() => setMobileView('breakdown')}
@@ -189,7 +261,7 @@ export default function HomePage() {
               </svg>
             </button>
           )}
-          {currentStudy && <ExportMenu study={currentStudy} />}
+          {currentStudy && studyMode === 'verse' && <ExportMenu study={currentStudy} />}
 
           <button
             id="saved-studies-btn"
@@ -217,10 +289,10 @@ export default function HomePage() {
               (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
               (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
             }}
-            aria-label={`View saved studies (${savedStudies.length})`}
+            aria-label={`View saved studies (${totalSaved})`}
           >
             📚 Saved
-            {savedStudies.length > 0 && (
+            {totalSaved > 0 && (
               <span
                 style={{
                   background: 'var(--bg-tab-active)',
@@ -236,7 +308,7 @@ export default function HomePage() {
                   justifyContent: 'center',
                 }}
               >
-                {savedStudies.length > 9 ? '9+' : savedStudies.length}
+                {totalSaved > 9 ? '9+' : totalSaved}
               </span>
             )}
           </button>
@@ -254,7 +326,7 @@ export default function HomePage() {
           overflow: 'hidden',
         }}
       >
-        {/* Left: Scripture Input */}
+        {/* Left: Scripture/Topic Input */}
         <div
           className={`input-panel ${mobileView === 'breakdown' ? 'mobile-hidden' : ''}`}
           style={{
@@ -265,10 +337,15 @@ export default function HomePage() {
             flexDirection: 'column',
           }}
         >
-          <ScriptureInput onSubmit={handleStudy} isLoading={isLoading} />
+          <ScriptureInput
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
+            studyMode={studyMode}
+            onModeChange={handleModeChange}
+          />
         </div>
 
-        {/* Right: Study Breakdown */}
+        {/* Right: Study/Topic Breakdown */}
         <div
           className={`card breakdown-panel ${mobileView === 'input' ? 'mobile-hidden' : ''}`}
           style={{
@@ -280,11 +357,19 @@ export default function HomePage() {
             height: 'calc(100% - 32px)',
           }}
         >
-          <StudyBreakdown
-            result={result}
-            isLoading={isLoading}
-            scripture={scripture}
-          />
+          {studyMode === 'verse' ? (
+            <StudyBreakdown
+              result={result}
+              isLoading={isLoading}
+              scripture={scripture}
+            />
+          ) : (
+            <TopicBreakdown
+              result={topicResult}
+              isLoading={isLoading}
+              topic={topic}
+            />
+          )}
         </div>
       </div>
 
@@ -328,8 +413,11 @@ export default function HomePage() {
       {/* Saved Studies Drawer */}
       <SavedStudies
         studies={savedStudies}
+        topicStudies={savedTopicStudies}
         onLoad={handleLoadStudy}
+        onLoadTopic={handleLoadTopicStudy}
         onDelete={handleDeleteStudy}
+        onDeleteTopic={handleDeleteTopicStudy}
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       />

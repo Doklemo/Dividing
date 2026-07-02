@@ -42,3 +42,47 @@ export interface Tab {
   label: string;
   icon: string;
 }
+
+// ── Topic Study Types ──────────────────────────
+
+export interface KeyScripture {
+  reference: string;
+  text: string;
+  significance: string;
+}
+
+export interface TopicWord {
+  word: string;
+  englishWord: string;
+  transliteration: string;
+  definition: string;
+  strongsNumber: string;
+  usage: string;
+}
+
+export interface TopicStudyResult {
+  overview: string;
+  keyScriptures: KeyScripture[];
+  wordStudy: TopicWord[];
+  theologicalDevelopment: string;
+  practicalApplication: string;
+}
+
+export type TopicTabId = 'overview' | 'keyScriptures' | 'wordStudy' | 'theologicalDevelopment' | 'practicalApplication';
+
+export interface TopicTab {
+  id: TopicTabId;
+  label: string;
+  icon: string;
+}
+
+export type StudyMode = 'verse' | 'topic';
+
+export interface SavedTopicStudy {
+  key: string;
+  topic: string;
+  result: TopicStudyResult;
+  savedAt: string;
+  snippet: string;
+  type: 'topic';
+}

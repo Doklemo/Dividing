@@ -384,3 +384,45 @@ nav, .toolbar, .input-panel, .breakdown-panel, .card, aside, .tab-btn {
     top: calc(100% + 4px) !important;
   }
 }
+
+/* ── Study Mode Toggle ──────────────────────────── */
+.mode-toggle {
+  display: flex;
+  background: var(--bg-input);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 2px;
+  width: 100%;
+}
+
+.mode-toggle-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-base);
+}
+
+.mode-toggle-btn:hover:not(.active) {
+  color: var(--text-secondary);
+  background: var(--bg-tab-hover);
+}
+
+.mode-toggle-btn.active {
+  color: var(--text-primary);
+  background: var(--bg-tab-active);
+  border: 1px solid var(--border-mid);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}

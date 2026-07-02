@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { StudyMode } from '@/types/study';
 
 interface ScriptureInputProps {
-  onSubmit: (scripture: string) => void;
+  onSubmit: (text: string) => void;
   isLoading: boolean;
+  studyMode: StudyMode;
+  onModeChange: (mode: StudyMode) => void;
 }
 
 const EXAMPLE_VERSES = [
@@ -14,7 +17,18 @@ const EXAMPLE_VERSES = [
   'The Lord is my shepherd, I lack nothing. He makes me lie down in green pastures... — Psalm 23:1-2',
 ];
 
-export default function ScriptureInput({ onSubmit, isLoading }: ScriptureInputProps) {
+const EXAMPLE_TOPICS = [
+  'Grace',
+  'Sanctification',
+  'The Holy Spirit',
+  'Justification by Faith',
+  'Prayer',
+  'The Resurrection',
+  'Spiritual Gifts',
+  'The Sovereignty of God',
+];
+
+export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeChange }: ScriptureInputProps) {
   const [text, setText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -32,14 +46,28 @@ export default function ScriptureInput({ onSubmit, isLoading }: ScriptureInputPr
   };
 
   const loadExample = () => {
-    const random = EXAMPLE_VERSES[Math.floor(Math.random() * EXAMPLE_VERSES.length)];
-    setText(random);
+    if (studyMode === 'topic') {
+      const random = EXAMPLE_TOPICS[Math.floor(Math.random() * EXAMPLE_TOPICS.length)];
+      setText(random);
+    } else {
+      const random = EXAMPLE_VERSES[Math.floor(Math.random() * EXAMPLE_VERSES.length)];
+      setText(random);
+    }
     textareaRef.current?.focus();
   };
 
+  const handleModeSwitch = (mode: StudyMode) => {
+    if (mode !== studyMode) {
+      setText('');
+      onModeChange(mode);
+    }
+  };
+
   const charCount = text.length;
-  const charLimit = 5000;
+  const charLimit = studyMode === 'topic' ? 200 : 5000;
   const isOverLimit = charCount > charLimit;
+
+  const isVerse = studyMode === 'verse';
 
   return (
     <div
@@ -50,6 +78,26 @@ export default function ScriptureInput({ onSubmit, isLoading }: ScriptureInputPr
         gap: '20px',
       }}
     >
+      {/* Mode Toggle */}
+      <div className="mode-toggle animate-fade-up">
+        <button
+          className={`mode-toggle-btn${isVerse ? ' active' : ''}`}
+          onClick={() => handleModeSwitch('verse')}
+          disabled={isLoading}
+          aria-label="Switch to verse study mode"
+        >
+          📖 Verse Study
+        </button>
+        <button
+          className={`mode-toggle-btn${!isVerse ? ' active' : ''}`}
+          onClick={() => handleModeSwitch('topic')}
+          disabled={isLoading}
+          aria-label="Switch to topic study mode"
+        >
+          📚 Topic Study
+        </button>
+      </div>
+
       {/* Header */}
       <div className="animate-fade-up">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
@@ -61,11 +109,13 @@ export default function ScriptureInput({ onSubmit, isLoading }: ScriptureInputPr
               letterSpacing: '-0.01em',
             }}
           >
-            Dividing the word of truth
+            {isVerse ? 'Dividing the word of truth' : 'Explore a Bible topic'}
           </h1>
         </div>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          Paste any scripture passage for a deep AI-powered study
+          {isVerse
+            ? 'Paste any scripture passage for a deep AI-powered study'
+            : 'Enter a topic for a comprehensive biblical exploration'}
         </p>
       </div>
 
@@ -90,12 +140,16 @@ export default function ScriptureInput({ onSubmit, isLoading }: ScriptureInputPr
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
-          placeholder="Paste the Bible verse(s) you want to study here…&#10;&#10;Example: For God so loved the world… (John 3:16)"
-          aria-label="Scripture input"
+          placeholder={
+            isVerse
+              ? "Paste the Bible verse(s) you want to study here…\n\nExample: For God so loved the world… (John 3:16)"
+              : "Enter a Bible topic to study…\n\nExample: Grace, Sanctification, The Holy Spirit"
+          }
+          aria-label={isVerse ? 'Scripture input' : 'Topic input'}
           style={{
             width: '100%',
             height: '100%',
-            minHeight: '240px',
+            minHeight: isVerse ? '240px' : '120px',
             background: 'transparent',
             border: 'none',
             color: 'var(--text-primary)',
@@ -133,17 +187,17 @@ export default function ScriptureInput({ onSubmit, isLoading }: ScriptureInputPr
           onClick={handleSubmit}
           disabled={isLoading || !text.trim() || isOverLimit}
           style={{ width: '100%', height: '52px', fontSize: '15px' }}
-          aria-label="Start studying this scripture"
+          aria-label={isVerse ? 'Start studying this scripture' : 'Start studying this topic'}
         >
           {isLoading ? (
             <>
               <span className="pulse-dot" style={{ flexShrink: 0 }} />
-              <span>Studying scripture…</span>
+              <span>{isVerse ? 'Studying scripture…' : 'Studying topic…'}</span>
             </>
           ) : (
             <>
               <span>✦</span>
-              <span>Let&apos;s study this scripture</span>
+              <span>{isVerse ? "Let\u0027s study this scripture" : 'Study this topic'}</span>
             </>
           )}
         </button>

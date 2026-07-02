@@ -1,30 +1,76 @@
 'use client';
 
-import { SavedStudy } from '@/types/study';
-import { deleteStudy } from '@/lib/storage';
+import { SavedStudy, SavedTopicStudy } from '@/types/study';
+import { deleteStudy, deleteTopicStudy } from '@/lib/storage';
 import { exportToText, exportToPDF } from '@/lib/export';
 import { useState } from 'react';
 
+type AnyStudy = SavedStudy | SavedTopicStudy;
+
+function isTopicStudy(study: AnyStudy): study is SavedTopicStudy {
+  return 'type' in study && study.type === 'topic';
+}
+
 interface SavedStudiesProps {
   studies: SavedStudy[];
+  topicStudies: SavedTopicStudy[];
   onLoad: (study: SavedStudy) => void;
+  onLoadTopic: (study: SavedTopicStudy) => void;
   onDelete: (key: string) => void;
+  onDeleteTopic: (key: string) => void;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClose }: SavedStudiesProps) {
+export default function SavedStudies({
+  studies,
+  topicStudies,
+  onLoad,
+  onLoadTopic,
+  onDelete,
+  onDeleteTopic,
+  isOpen,
+  onClose,
+}: SavedStudiesProps) {
   const [exportingKey, setExportingKey] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'verse' | 'topic'>('all');
 
-  const handleDelete = (key: string) => {
-    deleteStudy(key);
-    onDelete(key);
+  // Merge and sort all studies by date
+  const allStudies: AnyStudy[] = [
+    ...studies,
+    ...topicStudies,
+  ].sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+
+  const filteredStudies = activeFilter === 'all'
+    ? allStudies
+    : activeFilter === 'topic'
+      ? allStudies.filter(isTopicStudy)
+      : allStudies.filter((s) => !isTopicStudy(s));
+
+  const handleDelete = (study: AnyStudy) => {
+    if (isTopicStudy(study)) {
+      deleteTopicStudy(study.key);
+      onDeleteTopic(study.key);
+    } else {
+      deleteStudy(study.key);
+      onDelete(study.key);
+    }
   };
 
-  const handleExportPDF = async (study: SavedStudy) => {
+  const handleLoad = (study: AnyStudy) => {
+    if (isTopicStudy(study)) {
+      onLoadTopic(study);
+    } else {
+      onLoad(study);
+    }
+    onClose();
+  };
+
+  const handleExportPDF = async (study: AnyStudy) => {
+    if (isTopicStudy(study)) return; // PDF export only for verse studies for now
     setExportingKey(study.key);
     try {
-      await exportToPDF(study);
+      await exportToPDF(study as SavedStudy);
     } finally {
       setExportingKey(null);
     }
@@ -34,6 +80,8 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
     const d = new Date(iso);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
+
+  const totalCount = allStudies.length;
 
   if (!isOpen) return null;
 
@@ -78,42 +126,60 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
             padding: '20px 24px',
             borderBottom: '1px solid var(--border-mid)',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            flexDirection: 'column',
+            gap: '14px',
           }}
         >
-          <div>
-            <h2 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' }}>
-              Saved Studies
-            </h2>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-              {studies.length} {studies.length === 1 ? 'study' : 'studies'} saved locally
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h2 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                Saved Studies
+              </h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                {totalCount} {totalCount === 1 ? 'study' : 'studies'} saved locally
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                background: 'var(--bg-tab-active)',
+                border: '1px solid var(--border-brand)',
+                borderRadius: '8px',
+                color: 'var(--text-primary)',
+                width: '32px',
+                height: '32px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '16px',
+              }}
+              aria-label="Close saved studies"
+            >
+              ✕
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'var(--bg-tab-active)',
-              border: '1px solid var(--border-brand)',
-              borderRadius: '8px',
-              color: 'var(--text-primary)',
-              width: '32px',
-              height: '32px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '16px',
-            }}
-            aria-label="Close saved studies"
-          >
-            ✕
-          </button>
+
+          {/* Filter tabs */}
+          {totalCount > 0 && (
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {(['all', 'verse', 'topic'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  className={`tab-btn${activeFilter === filter ? ' active' : ''}`}
+                  onClick={() => setActiveFilter(filter)}
+                  style={{ fontSize: '12px', padding: '5px 10px' }}
+                >
+                  {filter === 'all' ? 'All' : filter === 'verse' ? '📖 Verse' : '📚 Topic'}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Study list */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-          {studies.length === 0 ? (
+          {filteredStudies.length === 0 ? (
             <div
               style={{
                 textAlign: 'center',
@@ -122,141 +188,170 @@ export default function SavedStudies({ studies, onLoad, onDelete, isOpen, onClos
               }}
             >
               <div style={{ fontSize: '32px', marginBottom: '12px' }}>📚</div>
-              <p style={{ fontSize: '14px' }}>No saved studies yet.</p>
+              <p style={{ fontSize: '14px' }}>
+                {activeFilter === 'all'
+                  ? 'No saved studies yet.'
+                  : `No saved ${activeFilter} studies yet.`}
+              </p>
               <p style={{ fontSize: '12px', marginTop: '6px' }}>
                 Complete a study and it will be saved automatically.
               </p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {studies.map((study) => (
-                <div
-                  key={study.key}
-                  className="card"
-                  style={{ padding: '14px 16px' }}
-                >
-                  {/* Study snippet */}
-                  <p
-                    className="font-display"
-                    style={{
-                      fontSize: '13px',
-                      fontStyle: 'italic',
-                      color: 'var(--text-secondary)',
-                      lineHeight: '1.6',
-                      marginBottom: '10px',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
+              {filteredStudies.map((study) => {
+                const isTopic = isTopicStudy(study);
+                const displayText = isTopic ? study.topic : study.snippet;
+                const fullText = isTopic ? study.topic : study.scripture;
+
+                return (
+                  <div
+                    key={study.key}
+                    className="card"
+                    style={{ padding: '14px 16px' }}
                   >
-                    {study.snippet}{study.scripture.length > 120 ? '…' : ''}
-                  </p>
+                    {/* Type badge */}
+                    <div style={{ marginBottom: '8px' }}>
+                      <span
+                        className="badge"
+                        style={{
+                          background: isTopic ? 'rgba(96, 165, 250, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                          color: isTopic ? 'var(--brand-accent)' : '#34d399',
+                          border: `1px solid ${isTopic ? 'rgba(96, 165, 250, 0.15)' : 'rgba(16, 185, 129, 0.15)'}`,
+                          fontSize: '10px',
+                        }}
+                      >
+                        {isTopic ? '📚 Topic' : '📖 Verse'}
+                      </span>
+                    </div>
 
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                    {formatDate(study.savedAt)}
-                  </p>
-
-                  {/* Actions */}
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button
-                      onClick={() => { onLoad(study); onClose(); }}
+                    {/* Study snippet */}
+                    <p
+                      className="font-display"
                       style={{
-                        flex: 1,
-                        background: 'var(--bg-tab-active)',
-                        border: '1px solid var(--border-brand)',
-                        borderRadius: '6px',
-                        color: 'var(--text-primary)',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        padding: '6px 10px',
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = 'var(--border-brand)';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
+                        fontSize: '13px',
+                        fontStyle: 'italic',
+                        color: 'var(--text-secondary)',
+                        lineHeight: '1.6',
+                        marginBottom: '10px',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
                       }}
                     >
-                      Load
-                    </button>
-                    <button
-                      onClick={() => exportToText(study)}
-                      style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-mid)',
-                        borderRadius: '6px',
-                        color: 'var(--text-secondary)',
-                        fontSize: '11px',
-                        padding: '6px 10px',
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
-                      }}
-                    >
-                      .txt
-                    </button>
-                    <button
-                      onClick={() => handleExportPDF(study)}
-                      disabled={exportingKey === study.key}
-                      style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-mid)',
-                        borderRadius: '6px',
-                        color: 'var(--text-secondary)',
-                        fontSize: '11px',
-                        padding: '6px 10px',
-                        cursor: 'pointer',
-                        opacity: exportingKey === study.key ? 0.5 : 1,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (exportingKey !== study.key) {
+                      {displayText}{fullText.length > 120 ? '…' : ''}
+                    </p>
+
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                      {formatDate(study.savedAt)}
+                    </p>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => handleLoad(study)}
+                        style={{
+                          flex: 1,
+                          background: 'var(--bg-tab-active)',
+                          border: '1px solid var(--border-brand)',
+                          borderRadius: '6px',
+                          color: 'var(--text-primary)',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          padding: '6px 10px',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--border-brand)';
+                        }}
+                        onMouseLeave={(e) => {
                           (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
-                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (exportingKey !== study.key) {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
-                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
-                        }
-                      }}
-                    >
-                      {exportingKey === study.key ? '…' : 'PDF'}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(study.key)}
-                      style={{
-                        background: 'rgba(239,68,68,0.08)',
-                        border: '1px solid rgba(239,68,68,0.2)',
-                        borderRadius: '6px',
-                        color: '#f87171',
-                        fontSize: '11px',
-                        padding: '6px 8px',
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.15)';
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.35)';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.08)';
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.2)';
-                      }}
-                      aria-label="Delete study"
-                    >
-                      🗑
-                    </button>
+                        }}
+                      >
+                        Load
+                      </button>
+                      {!isTopic && (
+                        <>
+                          <button
+                            onClick={() => exportToText(study as SavedStudy)}
+                            style={{
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border-mid)',
+                              borderRadius: '6px',
+                              color: 'var(--text-secondary)',
+                              fontSize: '11px',
+                              padding: '6px 10px',
+                              cursor: 'pointer',
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
+                              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
+                              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
+                            }}
+                          >
+                            .txt
+                          </button>
+                          <button
+                            onClick={() => handleExportPDF(study)}
+                            disabled={exportingKey === study.key}
+                            style={{
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border-mid)',
+                              borderRadius: '6px',
+                              color: 'var(--text-secondary)',
+                              fontSize: '11px',
+                              padding: '6px 10px',
+                              cursor: 'pointer',
+                              opacity: exportingKey === study.key ? 0.5 : 1,
+                            }}
+                            onMouseEnter={(e) => {
+                              if (exportingKey !== study.key) {
+                                (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tab-active)';
+                                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-brand)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (exportingKey !== study.key) {
+                                (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)';
+                                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-mid)';
+                              }
+                            }}
+                          >
+                            {exportingKey === study.key ? '…' : 'PDF'}
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => handleDelete(study)}
+                        style={{
+                          background: 'rgba(239,68,68,0.08)',
+                          border: '1px solid rgba(239,68,68,0.2)',
+                          borderRadius: '6px',
+                          color: '#f87171',
+                          fontSize: '11px',
+                          padding: '6px 8px',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.15)';
+                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.35)';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.08)';
+                          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.2)';
+                        }}
+                        aria-label="Delete study"
+                      >
+                        🗑
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
