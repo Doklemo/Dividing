@@ -1,42 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { findPrebuiltTopic } from '@/lib/prebuiltTopics';
 
-const TOPIC_SYSTEM_PROMPT = `You are a deeply knowledgeable Bible study assistant helping Christians understand important topics emphasised throughout Scripture.
+// In-memory cache for custom topics analyzed during the server lifecycle
+const serverTopicCache = new Map<string, any>();
+
+const TOPIC_SYSTEM_PROMPT = `You are a world-class, deeply scholarly and spiritually enriching Bible study assistant helping Christians explore foundational biblical themes and topics.
 
 For each topic provided, return a JSON object with this EXACT structure:
 {
-  "overview": "A detailed and comprehensive 2-3 paragraph theological overview of the topic, covering its meaning, biblical significance, and importance in Christian theology",
+  "overview": "A comprehensive, highly detailed 4-5 paragraph theological overview covering: (1) Biblical definition & core premise, (2) Covenantal & redemptive context, (3) Key theological doctrines associated with this topic, and (4) Its systemic importance across the whole story of Scripture.",
   "keyScriptures": [
     {
-      "reference": "Book Chapter:Verse",
-      "text": "The actual verse text (ESV or NIV)",
-      "significance": "Detailed explanation of why this passage is foundational to understanding this topic"
+      "reference": "Book Chapter:Verse(s)",
+      "text": "The full, actual scripture text (ESV or NIV)",
+      "significance": "In-depth explanation of how this passage establishes or deepens the doctrine/theme.",
+      "category": "Category name (e.g. 'Old Testament Law', 'Wisdom & Psalms', 'Prophets', 'Gospels', 'Pauline Epistles', 'General Epistles & Revelation')"
     }
   ],
   "wordStudy": [
     {
-      "word": "Original Hebrew/Greek word in its original script (Hebrew script for OT concepts, Greek script for NT concepts)",
-      "englishWord": "English word/phrase being translated",
-      "transliteration": "English transliteration",
-      "definition": "Full lexical definition and theological significance in-depth",
-      "strongsNumber": "H1234 (Hebrew) or G1234 (Greek)",
-      "usage": "How this word relates to the topic across Scripture"
+      "word": "Original Hebrew/Aramaic or Greek word in its original script (e.g. חֶסֶד or χάρις)",
+      "englishWord": "English translation / rendering",
+      "transliteration": "Accurate transliteration (e.g. chesed or charis)",
+      "definition": "Exhaustive lexical definition, root meanings, and theological weight.",
+      "strongsNumber": "H1234 or G1234",
+      "usage": "Exhaustive analysis of how this specific word is used in Scripture in relation to the topic."
     }
   ],
-  "theologicalDevelopment": "2-3 detailed paragraphs tracing how this topic develops from the Old Testament through the New Testament, showing the progression and deepening of the concept across Scripture",
-  "practicalApplication": "2-3 detailed paragraphs on how this topic applies to daily Christian life, with practical insights grounded in scripture"
+  "theologicalDevelopment": "A rich, multi-paragraph (4-5 paragraphs) narrative of progressive revelation tracing the topic chronologically: (1) Creation & Patriarchal Era, (2) Law, Sacrificial System & Kingdom, (3) Prophetic Promises, (4) Christological Fulfillment in Jesus and the Gospels, and (5) Apostolic Teaching & New Creation Eschatology.",
+  "practicalApplication": "A comprehensive, highly actionable 4-5 paragraph breakdown of practical Christian living: personal reflection, spiritual disciplines, communal fellowship, ethical conduct, and prayerful response.",
+  "scholarlyPerspectives": [
+    {
+      "author": "Scholar / Church Father / Reformer / Theologian Name (e.g., Augustine, John Calvin, Charles Spurgeon, Matthew Henry, N.T. Wright, C.S. Lewis, Herman Bavinck)",
+      "source": "Commentary or theological work title",
+      "text": "A rich, profound theological insight or quote directly explaining this topic."
+    }
+  ]
 }
 
-Rules:
-- Always return valid JSON only — no markdown, no extra text
-- Provide 5-8 key scripture passages that are foundational to the topic
-- Include 3-5 key original language words related to the topic:
-  - Use Hebrew words (Hebrew script, Strong's numbers starting with 'H') for Old Testament concepts
-  - Use Greek words (Greek script, Strong's numbers starting with 'G') for New Testament concepts
-  - For topics that span both testaments, include words from both languages
-- The theological development section MUST trace the topic from Genesis through Revelation, showing how the concept evolves
-- The practical application MUST be grounded in specific scriptures, not generic advice
-- Be thorough, detailed, scholarly, and spiritually enriching`;
+Strict Requirements for Depth & Completeness:
+- Always return valid JSON only — no markdown formatting, no trailing commas.
+- PROVIDE AT LEAST 10 TO 14 KEY SCRIPTURES in "keyScriptures". They MUST cover diverse parts of the Bible (Torah, Prophets/Psalms, Gospels, Pauline Epistles, General Epistles/Revelation).
+- PROVIDE AT LEAST 6 TO 10 ORIGINAL LANGUAGE WORDS in "wordStudy", covering both Hebrew (OT) and Greek (NT) root terms.
+- PROVIDE AT LEAST 5 SCHOLARLY PERSPECTIVES in "scholarlyPerspectives" from respected historical theologians and commentators across church history.
+- Ensure all scripture quotes are accurate and full (not truncated).
+- Be scholarly, exhaustive in scope, historically grounded, and spiritually inspiring.`;
 
 // Retry with exponential backoff for 429 or 5xx errors
 async function withRetry<T>(
@@ -124,22 +133,13 @@ async function callOpenRouterFallback(userMessage: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: 'Invalid API key. Please configure GEMINI_API_KEY in your environment variables (or .env.local locally).' },
-      { status: 401 }
-    );
-  }
-
-  let userMessage = '';
+  let topic = '';
 
   try {
     const body = await req.json();
-    const { topic } = body as { topic: string };
+    topic = (body?.topic || '').trim();
 
-    if (!topic || typeof topic !== 'string' || topic.trim().length < 3) {
+    if (!topic || typeof topic !== 'string' || topic.length < 3) {
       return NextResponse.json(
         { error: 'Please provide a valid Bible topic (at least 3 characters).' },
         { status: 400 }
@@ -153,6 +153,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const normalizedKey = topic.toLowerCase();
+
+    // 1. Check instant pre-built topics database (<20ms response time)
+    const prebuiltResult = findPrebuiltTopic(topic);
+    if (prebuiltResult) {
+      console.log(`[Topic Study] Returning instant prebuilt study for: "${topic}"`);
+      return NextResponse.json(prebuiltResult);
+    }
+
+    // 2. Check server in-memory cache for custom topics
+    if (serverTopicCache.has(normalizedKey)) {
+      console.log(`[Topic Study] Returning cached study for: "${topic}"`);
+      return NextResponse.json(serverTopicCache.get(normalizedKey));
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'Invalid API key. Please configure GEMINI_API_KEY in your environment variables (or .env.local locally).' },
+        { status: 401 }
+      );
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel({
@@ -160,7 +184,7 @@ export async function POST(req: NextRequest) {
       systemInstruction: TOPIC_SYSTEM_PROMPT,
     });
 
-    userMessage = `Please provide a comprehensive Bible topic study for the following topic:\n\n${topic.trim()}`;
+    const userMessage = `Please provide an exhaustive, deeply comprehensive Bible topic study for the following topic:\n\n${topic}`;
 
     const completion = await withRetry(() =>
       model.generateContent({
@@ -182,6 +206,10 @@ export async function POST(req: NextRequest) {
     }
 
     const result = cleanAndParseJSON(content);
+
+    // Save to server cache for instant future lookups
+    serverTopicCache.set(normalizedKey, result);
+
     return NextResponse.json(result);
   } catch (error: any) {
     console.error('Topic Study API error:', error);
@@ -195,12 +223,13 @@ export async function POST(req: NextRequest) {
       errorMessage.includes('429');
 
     // Attempt OpenRouter fallback if Gemini is rate-limited/quota-exhausted
-    if (isQuotaError && userMessage) {
+    if (isQuotaError && topic) {
       if (process.env.OPENROUTER_API_KEY) {
         console.log('Gemini rate limit exceeded. Attempting OpenRouter (openrouter/free) fallback...');
         try {
-          const fallbackContent = await callOpenRouterFallback(userMessage);
+          const fallbackContent = await callOpenRouterFallback(`Please provide an exhaustive Bible topic study for: ${topic}`);
           const result = cleanAndParseJSON(fallbackContent);
+          serverTopicCache.set(topic.toLowerCase(), result);
           return NextResponse.json(result);
         } catch (fallbackError: any) {
           console.error('OpenRouter fallback failed:', fallbackError);

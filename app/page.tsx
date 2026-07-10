@@ -61,7 +61,7 @@ export default function HomePage() {
       // Auto-save
       const saved = saveStudy(text, data);
       setCurrentStudy(saved);
-      setSavedStudies((prev) => [saved, ...prev]);
+      setSavedStudies((prev) => [saved, ...prev.filter((s) => s.key !== saved.key)]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
@@ -77,7 +77,12 @@ export default function HomePage() {
     setCurrentTopicStudy(null);
     setMobileView('breakdown');
 
+    const SIMULATED_MIN_MS = 3000; // 3-second minimum for prebuilt topics
+    const PREBUILT_THRESHOLD_MS = 800; // responses faster than this are prebuilt
+
     try {
+      const fetchStart = Date.now();
+
       const res = await fetch('/api/topic-study', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -90,12 +95,20 @@ export default function HomePage() {
       }
 
       const data: TopicStudyResult = await res.json();
+      const elapsed = Date.now() - fetchStart;
+
+      // If the response was near-instant it came from the prebuilt cache.
+      // Pad the wait time so it feels like it's being analysed.
+      if (elapsed < PREBUILT_THRESHOLD_MS) {
+        await new Promise((r) => setTimeout(r, SIMULATED_MIN_MS - elapsed));
+      }
+
       setTopicResult(data);
 
       // Auto-save
       const saved = saveTopicStudy(topicText, data);
       setCurrentTopicStudy(saved);
-      setSavedTopicStudies((prev) => [saved, ...prev]);
+      setSavedTopicStudies((prev) => [saved, ...prev.filter((s) => s.key !== saved.key)]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
@@ -143,7 +156,7 @@ export default function HomePage() {
   const totalSaved = savedStudies.length + savedTopicStudies.length;
 
   return (
-    <>
+    <div className="main-wrapper">
       {/* Toolbar */}
       <div
         className="toolbar"
@@ -322,7 +335,8 @@ export default function HomePage() {
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '0',
-          height: 'calc(100vh - 60px - 52px - 48px)',
+          flex: 1,
+          minHeight: 0,
           overflow: 'hidden',
         }}
       >
@@ -384,18 +398,21 @@ export default function HomePage() {
           }
           .split-layout {
             grid-template-columns: 1fr !important;
-            height: auto !important;
-            overflow: visible !important;
+            height: 100% !important;
+            overflow: hidden !important;
           }
           .input-panel {
             border-right: none !important;
-            border-bottom: 1px solid var(--border-mid) !important;
-            padding: 24px 16px !important;
-            overflow-y: visible !important;
+            border-bottom: none !important;
+            padding: 20px 16px !important;
+            overflow-y: auto !important;
+            height: 100% !important;
           }
           .breakdown-panel {
-            margin: 16px 8px !important;
-            height: 600px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            border: none !important;
+            height: 100% !important;
             overflow: hidden !important;
           }
           .mobile-hidden {
@@ -421,6 +438,6 @@ export default function HomePage() {
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       />
-    </>
+    </div>
   );
 }

@@ -49,6 +49,7 @@ export interface KeyScripture {
   reference: string;
   text: string;
   significance: string;
+  category?: string;
 }
 
 export interface TopicWord {
@@ -66,9 +67,16 @@ export interface TopicStudyResult {
   wordStudy: TopicWord[];
   theologicalDevelopment: string;
   practicalApplication: string;
+  scholarlyPerspectives?: Commentary[];
 }
 
-export type TopicTabId = 'overview' | 'keyScriptures' | 'wordStudy' | 'theologicalDevelopment' | 'practicalApplication';
+export type TopicTabId =
+  | 'overview'
+  | 'keyScriptures'
+  | 'wordStudy'
+  | 'theologicalDevelopment'
+  | 'practicalApplication'
+  | 'scholarlyPerspectives';
 
 export interface TopicTab {
   id: TopicTabId;

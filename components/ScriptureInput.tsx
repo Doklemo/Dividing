@@ -19,13 +19,16 @@ const EXAMPLE_VERSES = [
 
 const EXAMPLE_TOPICS = [
   'Grace',
-  'Sanctification',
-  'The Holy Spirit',
-  'Justification by Faith',
+  'Faith',
   'Prayer',
-  'The Resurrection',
-  'Spiritual Gifts',
-  'The Sovereignty of God',
+  'The Holy Spirit',
+  'Salvation',
+  'Love of God',
+  'Sin',
+  'Repentance',
+  'The Trinity',
+  'The Second Coming',
+  'Heaven and Eternal Life',
 ];
 
 export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeChange }: ScriptureInputProps) {
@@ -86,7 +89,7 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
           disabled={isLoading}
           aria-label="Switch to verse study mode"
         >
-          📖 Verse Study
+          Verse Study
         </button>
         <button
           className={`mode-toggle-btn${!isVerse ? ' active' : ''}`}
@@ -94,7 +97,7 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
           disabled={isLoading}
           aria-label="Switch to topic study mode"
         >
-          📚 Topic Study
+          Topic Study
         </button>
       </div>
 
@@ -256,7 +259,7 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
             </button>
           )}
 
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+          <span className="hide-mobile" style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
             ⌘ + Enter to study
           </span>
         </div>

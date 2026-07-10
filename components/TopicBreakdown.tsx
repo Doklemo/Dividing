@@ -15,6 +15,7 @@ const TOPIC_TABS: TopicTab[] = [
   { id: 'wordStudy', label: 'Word Study', icon: 'Α' },
   { id: 'theologicalDevelopment', label: 'Theological Development', icon: '📜' },
   { id: 'practicalApplication', label: 'Application', icon: '🎯' },
+  { id: 'scholarlyPerspectives', label: 'Scholarly Insights', icon: '✍' },
 ];
 
 function SkeletonBlock({ lines = 4 }: { lines?: number }) {
@@ -92,30 +93,92 @@ function OverviewTab({ text }: { text: string }) {
   );
 }
 
+// Canonical Bible book order for sorting scriptures OT → NT
+const BIBLE_BOOK_ORDER: Record<string, number> = (() => {
+  const books = [
+    // Old Testament (39 books)
+    'genesis','exodus','leviticus','numbers','deuteronomy',
+    'joshua','judges','ruth','1 samuel','2 samuel',
+    '1 kings','2 kings','1 chronicles','2 chronicles',
+    'ezra','nehemiah','esther','job','psalms','psalm',
+    'proverbs','ecclesiastes','song of solomon','song of songs',
+    'isaiah','jeremiah','lamentations','ezekiel','daniel',
+    'hosea','joel','amos','obadiah','jonah','micah',
+    'nahum','habakkuk','zephaniah','haggai','zechariah','malachi',
+    // New Testament (27 books)
+    'matthew','mark','luke','john','acts',
+    'romans','1 corinthians','2 corinthians','galatians','ephesians',
+    'philippians','colossians','1 thessalonians','2 thessalonians',
+    '1 timothy','2 timothy','titus','philemon',
+    'hebrews','james','1 peter','2 peter',
+    '1 john','2 john','3 john','jude','revelation',
+  ];
+  const map: Record<string, number> = {};
+  books.forEach((b, i) => { map[b] = i; });
+  return map;
+})();
+
+function getBookOrder(reference: string): number {
+  // Normalize: trim, lowercase, strip leading numbers-with-spaces carefully
+  const ref = reference.trim().toLowerCase();
+  // Try progressively shorter prefixes to match "1 corinthians 13:4-7" → "1 corinthians"
+  // First, strip chapter:verse — everything from the first digit-colon pattern onward
+  const bookPart = ref.replace(/\s+\d+[:\d\-–,\s]*$/, '').trim();
+  if (BIBLE_BOOK_ORDER[bookPart] !== undefined) return BIBLE_BOOK_ORDER[bookPart];
+  // Fallback: try without trailing 's' (e.g. "psalm" vs "psalms")
+  const alt = bookPart.endsWith('s') ? bookPart.slice(0, -1) : bookPart + 's';
+  if (BIBLE_BOOK_ORDER[alt] !== undefined) return BIBLE_BOOK_ORDER[alt];
+  return 999; // Unknown books go to the end
+}
+
+function sortScriptures<T extends { reference: string }>(scriptures: T[]): T[] {
+  return [...scriptures].sort((a, b) => getBookOrder(a.reference) - getBookOrder(b.reference));
+}
+
 function KeyScripturesTab({ scriptures }: { scriptures: TopicStudyResult['keyScriptures'] }) {
-  if (!scriptures.length) return <p style={{ color: 'var(--text-muted)' }}>No key scriptures found.</p>;
+  if (!scriptures || !scriptures.length) return <p style={{ color: 'var(--text-muted)' }}>No key scriptures found.</p>;
+  const sorted = sortScriptures(scriptures);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {scriptures.map((s, i) => (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
+          {scriptures.length} Foundational Passages
+        </span>
+      </div>
+      {sorted.map((s, i) => (
         <div
           key={i}
           className="animate-fade-up card"
           style={{
-            padding: '16px 18px',
-            animationDelay: `${i * 0.07}s`,
+            padding: '18px 20px',
+            animationDelay: `${i * 0.05}s`,
             animationFillMode: 'both',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span className="badge badge-brand">{s.reference}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+            <span className="badge badge-brand" style={{ fontSize: '12px', padding: '5px 10px' }}>
+              {s.reference}
+            </span>
+            {s.category && (
+              <span
+                className="badge"
+                style={{
+                  background: 'var(--bg-tab-active)',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border-mid)',
+                }}
+              >
+                {s.category}
+              </span>
+            )}
           </div>
           <p
             className="font-display"
-            style={{ fontSize: '14px', fontStyle: 'italic', color: 'var(--text-primary)', marginBottom: '8px', lineHeight: '1.7' }}
+            style={{ fontSize: '15px', fontStyle: 'italic', color: 'var(--text-primary)', marginBottom: '10px', lineHeight: '1.75' }}
           >
             &ldquo;{s.text}&rdquo;
           </p>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.65' }}>
             {s.significance}
           </p>
         </div>
@@ -125,23 +188,28 @@ function KeyScripturesTab({ scriptures }: { scriptures: TopicStudyResult['keyScr
 }
 
 function WordStudyTab({ words }: { words: TopicStudyResult['wordStudy'] }) {
-  if (!words.length) return <p style={{ color: 'var(--text-muted)' }}>No word study available.</p>;
+  if (!words || !words.length) return <p style={{ color: 'var(--text-muted)' }}>No word study available.</p>;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
+          {words.length} Hebrew & Greek Terms Analyzed
+        </span>
+      </div>
       {words.map((w, i) => (
         <div
           key={i}
           className="card animate-fade-up"
           style={{
             padding: '18px 20px',
-            animationDelay: `${i * 0.07}s`,
+            animationDelay: `${i * 0.05}s`,
             animationFillMode: 'both',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap', marginBottom: '10px' }}>
             <span
               className="font-display"
-              style={{ fontSize: '22px', fontWeight: '700', color: 'var(--brand-accent)' }}
+              style={{ fontSize: '24px', fontWeight: '700', color: 'var(--brand-accent)' }}
             >
               {w.word}
             </span>
@@ -201,6 +269,63 @@ function PracticalApplicationTab({ text }: { text: string }) {
   );
 }
 
+function ScholarlyPerspectivesTab({ perspectives }: { perspectives?: TopicStudyResult['scholarlyPerspectives'] }) {
+  if (!perspectives || !perspectives.length) {
+    return <p style={{ color: 'var(--text-muted)' }}>No scholarly insights available for this topic.</p>;
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {perspectives.map((c, i) => (
+        <div
+          key={i}
+          className="card animate-fade-up"
+          style={{
+            padding: '18px 20px',
+            borderLeft: '3px solid var(--border-brand)',
+            animationDelay: `${i * 0.07}s`,
+            animationFillMode: 'both',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <div
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'var(--bg-tab-active)',
+                border: '1px solid var(--border-brand)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                flexShrink: 0,
+                color: '#ffffff',
+              }}
+            >
+              {c.author[0]}
+            </div>
+            <div>
+              <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                {c.author}
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                · {c.source}
+              </span>
+            </div>
+          </div>
+          <p
+            className="font-display"
+            style={{ fontSize: '14px', fontStyle: 'italic', color: 'var(--text-primary)', lineHeight: '1.75' }}
+          >
+            &ldquo;{c.text}&rdquo;
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function TopicBreakdown({ result, isLoading, topic }: TopicBreakdownProps) {
   const [activeTab, setActiveTab] = useState<TopicTabId>('overview');
 
@@ -224,13 +349,10 @@ export default function TopicBreakdown({ result, isLoading, topic }: TopicBreakd
       wordStudy: <WordStudyTab words={result.wordStudy} />,
       theologicalDevelopment: <TheologicalDevelopmentTab text={result.theologicalDevelopment} />,
       practicalApplication: <PracticalApplicationTab text={result.practicalApplication} />,
+      scholarlyPerspectives: <ScholarlyPerspectivesTab perspectives={result.scholarlyPerspectives} />,
     };
 
-    return (
-      <div style={{ padding: '24px' }}>
-        {tabContent[activeTab]}
-      </div>
-    );
+    return <div style={{ padding: '24px' }}>{tabContent[activeTab]}</div>;
   };
 
   return (
@@ -271,7 +393,11 @@ export default function TopicBreakdown({ result, isLoading, topic }: TopicBreakd
               </p>
             )}
           </div>
-          {result && <span className="badge badge-green">✓ Complete</span>}
+          {result && (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span className="badge badge-green">✓ Complete</span>
+            </div>
+          )}
           {isLoading && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="pulse-dot" />
@@ -282,6 +408,7 @@ export default function TopicBreakdown({ result, isLoading, topic }: TopicBreakd
 
         {/* Tabs */}
         <div
+          className="no-scrollbar"
           style={{
             display: 'flex',
             gap: '4px',

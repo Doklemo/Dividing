@@ -4,7 +4,14 @@ const STORAGE_PREFIX = 'dividing_study_';
 
 export function saveStudy(scripture: string, result: StudyResult): SavedStudy {
   const timestamp = new Date().toISOString();
-  const key = `${STORAGE_PREFIX}${Date.now()}`;
+  
+  // Prevent saving duplicate studies for the same scripture query
+  const studies = getAllStudies();
+  const existing = studies.find(
+    (s) => s.scripture.trim().toLowerCase() === scripture.trim().toLowerCase()
+  );
+
+  const key = existing ? existing.key : `${STORAGE_PREFIX}${Date.now()}`;
   const study: SavedStudy = {
     key,
     scripture,
@@ -73,7 +80,14 @@ const TOPIC_STORAGE_PREFIX = 'dividing_topic_';
 
 export function saveTopicStudy(topic: string, result: TopicStudyResult): SavedTopicStudy {
   const timestamp = new Date().toISOString();
-  const key = `${TOPIC_STORAGE_PREFIX}${Date.now()}`;
+  
+  // Prevent saving duplicate studies for the same topic query
+  const studies = getAllTopicStudies();
+  const existing = studies.find(
+    (s) => s.topic.trim().toLowerCase() === topic.trim().toLowerCase()
+  );
+
+  const key = existing ? existing.key : `${TOPIC_STORAGE_PREFIX}${Date.now()}`;
   const study: SavedTopicStudy = {
     key,
     topic,

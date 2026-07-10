@@ -322,6 +322,7 @@ export default function StudyBreakdown({ result, isLoading, scripture }: StudyBr
 
         {/* Tabs */}
         <div
+          className="no-scrollbar"
           style={{
             display: 'flex',
             gap: '4px',

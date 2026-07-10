@@ -263,6 +263,7 @@ nav, .toolbar, .input-panel, .breakdown-panel, .card, aside, .tab-btn {
   border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: all var(--transition-base);
 }
 
@@ -277,6 +278,32 @@ nav, .toolbar, .input-panel, .breakdown-panel, .card, aside, .tab-btn {
   border-color: var(--border-mid);
   font-weight: 600;
 }
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Main Page layout wrapper */
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px - 48px);
+  height: calc(100dvh - 60px - 48px);
+  overflow: hidden;
+}
+
+/* Hide elements on mobile viewports */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
 
 /* ── Card ─────────────────────────────────────── */
 .card {
