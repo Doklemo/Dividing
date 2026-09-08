@@ -248,7 +248,7 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
         style={{
           display: 'flex',
           alignItems: 'center',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           fontSize: '12px',
           color: 'var(--text-muted)',
           backgroundColor: 'var(--bg-glass)',
