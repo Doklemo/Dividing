@@ -84,7 +84,7 @@ export interface TopicTab {
   icon: string;
 }
 
-export type StudyMode = 'verse' | 'topic';
+export type StudyMode = 'verse' | 'topic' | 'bible';
 
 export interface SavedTopicStudy {
   key: string;
@@ -94,3 +94,20 @@ export interface SavedTopicStudy {
   snippet: string;
   type: 'topic';
 }
+
+// ── Bible Reader Types ──────────────────────────
+
+export interface BibleVerse {
+  verse: number;
+  text: string;
+}
+
+export interface BibleChapterData {
+  translation: string;
+  book: string;
+  bookId: number;
+  chapter: number;
+  totalChapters: number;
+  verses: BibleVerse[];
+}
+

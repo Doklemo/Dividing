@@ -117,7 +117,7 @@ export default function HomePage() {
   }, []);
 
   const handleSubmit = useCallback((text: string) => {
-    if (studyMode === 'verse') {
+    if (studyMode === 'verse' || studyMode === 'bible') {
       handleStudy(text);
     } else {
       handleTopicStudy(text);
@@ -152,7 +152,7 @@ export default function HomePage() {
     if (currentTopicStudy?.key === key) setCurrentTopicStudy(null);
   }, [currentTopicStudy]);
 
-  const activeResult = studyMode === 'verse' ? result : topicResult;
+  const activeResult = (studyMode === 'verse' || studyMode === 'bible') ? result : topicResult;
   const totalSaved = savedStudies.length + savedTopicStudies.length;
 
   return (
@@ -218,7 +218,7 @@ export default function HomePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="pulse-dot" />
               <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                {studyMode === 'verse' ? 'AI is studying your scripture…' : 'AI is exploring this topic…'}
+                {(studyMode === 'verse' || studyMode === 'bible') ? 'AI is studying your scripture…' : 'AI is exploring this topic…'}
               </span>
             </div>
           )}
@@ -274,7 +274,7 @@ export default function HomePage() {
               </svg>
             </button>
           )}
-          {currentStudy && studyMode === 'verse' && <ExportMenu study={currentStudy} />}
+          {currentStudy && (studyMode === 'verse' || studyMode === 'bible') && <ExportMenu study={currentStudy} />}
 
           <button
             id="saved-studies-btn"
@@ -371,7 +371,7 @@ export default function HomePage() {
             height: 'calc(100% - 32px)',
           }}
         >
-          {studyMode === 'verse' ? (
+          {(studyMode === 'verse' || studyMode === 'bible') ? (
             <StudyBreakdown
               result={result}
               isLoading={isLoading}

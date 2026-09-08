@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { StudyMode } from '@/types/study';
+import BibleReader from '@/components/BibleReader';
 
 interface ScriptureInputProps {
   onSubmit: (text: string) => void;
@@ -84,7 +85,7 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
       {/* Mode Toggle */}
       <div className="mode-toggle animate-fade-up">
         <button
-          className={`mode-toggle-btn${isVerse ? ' active' : ''}`}
+          className={`mode-toggle-btn${studyMode === 'verse' ? ' active' : ''}`}
           onClick={() => handleModeSwitch('verse')}
           disabled={isLoading}
           aria-label="Switch to verse study mode"
@@ -92,16 +93,29 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
           Verse Study
         </button>
         <button
-          className={`mode-toggle-btn${!isVerse ? ' active' : ''}`}
+          className={`mode-toggle-btn${studyMode === 'topic' ? ' active' : ''}`}
           onClick={() => handleModeSwitch('topic')}
           disabled={isLoading}
           aria-label="Switch to topic study mode"
         >
           Topic Study
         </button>
+        <button
+          className={`mode-toggle-btn${studyMode === 'bible' ? ' active' : ''}`}
+          onClick={() => handleModeSwitch('bible')}
+          disabled={isLoading}
+          aria-label="Switch to NKJV Bible reader mode"
+        >
+          NKJV Reader
+        </button>
       </div>
 
-      {/* Header */}
+      {studyMode === 'bible' ? (
+        <BibleReader onTriggerStudy={onSubmit} isLoadingStudy={isLoading} />
+      ) : (
+        <>
+          {/* Header */}
+
       <div className="animate-fade-up">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
           <h1
@@ -264,6 +278,9 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
           </span>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
+

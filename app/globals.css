@@ -453,3 +453,107 @@ nav, .toolbar, .input-panel, .breakdown-panel, .card, aside, .tab-btn {
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
+
+/* ── Bible Reader Styles ─────────────────────────── */
+.bible-select {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+}
+
+.bible-select-large {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  width: 100%;
+}
+
+.bible-select option,
+.bible-select-large option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.chapter-nav-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.chapter-nav-btn:hover {
+  background: var(--bg-tab-hover);
+  border-color: var(--border-brand);
+}
+
+.bible-verse-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+  border: 1px solid transparent;
+}
+
+.bible-verse-item:hover {
+  background: var(--bg-glass);
+  border-color: var(--border-subtle);
+}
+
+.bible-verse-item.selected {
+  background: var(--bg-tab-active);
+  border-color: var(--border-brand);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
+}
+
+.bible-verse-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  min-width: 18px;
+  margin-top: 2px;
+  user-select: none;
+}
+
+.bible-verse-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  font-family: Georgia, serif;
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg, var(--bg-glass) 25%, var(--bg-tab-hover) 50%, var(--bg-glass) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
