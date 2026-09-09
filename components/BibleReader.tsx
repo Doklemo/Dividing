@@ -340,19 +340,7 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
 
       {/* Floating / Sticky Bottom Bar when Verse is Selected */}
       {activePassage && (
-        <div
-          className="animate-fade-up"
-          style={{
-            padding: '12px 14px',
-            backgroundColor: 'var(--bg-card)',
-            borderRadius: '12px',
-            border: '1px solid var(--accent-gold-glow, rgba(212, 175, 55, 0.4))',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-          }}
-        >
+        <div className="bible-floating-modal animate-fade-up">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-gold)' }}>
               Selected: {activePassage.reference}
@@ -366,7 +354,8 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
                 background: 'transparent',
                 border: 'none',
                 color: 'var(--text-muted)',
-                fontSize: '12px',
+                fontSize: '13px',
+                padding: '4px 8px',
                 cursor: 'pointer',
               }}
             >
@@ -377,17 +366,7 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
           <button
             onClick={handleLaunchStudy}
             disabled={isLoadingStudy}
-            className="primary-btn pulse-glow"
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              fontSize: '14px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-            }}
+            className="primary-btn pulse-glow bible-study-action-btn"
           >
             {isLoadingStudy ? (
               <span>Preparing Study...</span>
