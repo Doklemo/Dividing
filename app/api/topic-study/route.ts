@@ -132,12 +132,27 @@ async function callOpenRouterFallback(userMessage: string): Promise<string> {
   return content;
 }
 
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  es: 'Spanish (Español)',
+  fr: 'French (Français)',
+  pt: 'Portuguese (Português)',
+  de: 'German (Deutsch)',
+  zh: 'Chinese (Simplified, 中文)',
+  ko: 'Korean (한국어)',
+  ja: 'Japanese (日本語)',
+  yo: 'Yoruba (Yorùbá)',
+  ig: 'Igbo (Asụsụ Igbo)',
+  ha: 'Hausa (Harshen Hausa)',
+};
+
 export async function POST(req: NextRequest) {
   let topic = '';
 
   try {
     const body = await req.json();
     topic = (body?.topic || '').trim();
+    const language = (body?.language || 'en') as string;
 
     if (!topic || typeof topic !== 'string' || topic.length < 3) {
       return NextResponse.json(
@@ -154,18 +169,23 @@ export async function POST(req: NextRequest) {
     }
 
     const normalizedKey = topic.toLowerCase();
+    const targetLang = language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : (language || 'English');
+    const isNonEnglish = Boolean(language && language !== 'en');
 
-    // 1. Check instant pre-built topics database (<20ms response time)
-    const prebuiltResult = findPrebuiltTopic(topic);
-    if (prebuiltResult) {
-      console.log(`[Topic Study] Returning instant prebuilt study for: "${topic}"`);
-      return NextResponse.json(prebuiltResult);
+    // 1. If English, check instant pre-built topics database (<20ms response time)
+    if (!isNonEnglish) {
+      const prebuiltResult = findPrebuiltTopic(topic);
+      if (prebuiltResult) {
+        console.log(`[Topic Study] Returning instant prebuilt study for: "${topic}"`);
+        return NextResponse.json(prebuiltResult);
+      }
     }
 
     // 2. Check server in-memory cache for custom topics
-    if (serverTopicCache.has(normalizedKey)) {
-      console.log(`[Topic Study] Returning cached study for: "${topic}"`);
-      return NextResponse.json(serverTopicCache.get(normalizedKey));
+    const cacheKey = `${normalizedKey}_${language || 'en'}`;
+    if (serverTopicCache.has(cacheKey)) {
+      console.log(`[Topic Study] Returning cached study for: "${topic}" (${targetLang})`);
+      return NextResponse.json(serverTopicCache.get(cacheKey));
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -177,14 +197,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const langInstruction = isNonEnglish
+      ? `\n\nCRITICAL MULTI-LANGUAGE REQUIREMENT:
+The user has requested the study to be output in: ${targetLang}.
+You MUST write all theological overviews, scripture explanations, original root word definitions and usages, chronological theological development, practical Christian living applications, and scholarly commentary insights entirely in ${targetLang}.
+Keep original Greek/Hebrew/Aramaic root words in their original script, but provide transliteration and definitions in ${targetLang}.`
+      : '';
+
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      systemInstruction: TOPIC_SYSTEM_PROMPT,
+      systemInstruction: TOPIC_SYSTEM_PROMPT + langInstruction,
     });
 
-    const userMessage = `Please provide an exhaustive, deeply comprehensive Bible topic study for the following topic:\n\n${topic}`;
+    const userMessage = `Please provide an exhaustive, deeply comprehensive Bible topic study for the following topic:\n\n${topic}${langInstruction}`;
 
     const completion = await withRetry(() =>
       model.generateContent({
@@ -208,7 +235,7 @@ export async function POST(req: NextRequest) {
     const result = cleanAndParseJSON(content);
 
     // Save to server cache for instant future lookups
-    serverTopicCache.set(normalizedKey, result);
+    serverTopicCache.set(cacheKey, result);
 
     return NextResponse.json(result);
   } catch (error: any) {

@@ -100,14 +100,46 @@ async function fetchFromBolls(translation: string, bookId: number, chapter: numb
   }));
 }
 
-async function fetchFromGeminiAI(translation: string, bookName: string, chapter: number) {
+const TRANSLATION_MAP: Record<string, string> = {
+  BM: 'Bíbélì Mímọ́ (Yorùbá Bible)',
+  IBO: 'Bible Nsọ (Igbo Bible)',
+  HAU: 'Littafi Mai Tsarki (Hausa Bible)',
+  RV1960: 'Reina-Valera 1960 (Spanish)',
+  NVI: 'Nueva Versión Internacional (Spanish)',
+  LBLA: 'La Biblia de las Américas (Spanish)',
+  FRLSG: 'Louis Segond 1910 (French)',
+  BDS: 'La Bible du Semeur (French)',
+  NBS: 'Nouvelle Bible Segond (French)',
+  ARC09: 'Almeida Revista e Corrigida (Portuguese)',
+  ARA: 'Almeida Revista e Atualizada (Portuguese)',
+  NVIPT: 'Nova Versão Internacional (Portuguese)',
+  NTLH: 'Nova Tradução na Linguagem de Hoje (Portuguese)',
+  LUT: 'Lutherbibel 1912 (German)',
+  S00: 'Schlachter 2000 (German)',
+  HFA: 'Hoffnung für Alle (German)',
+  CUNPS: 'Chinese Union Version Simplified 和合本 (Chinese)',
+  CUV: 'Chinese Union Version Traditional 和合本 (Chinese)',
+  KRV: 'Korean Revised Version 개역한글 (Korean)',
+  RNKSV: 'Korean New Translated Bible 새번역 (Korean)',
+  JPKJV: 'Japanese Kougo-yaku 1955 口語訳聖書 (Japanese)',
+  NJB: 'New Japanese Bible 新改訳聖書 (Japanese)',
+  NKJV: 'New King James Version (English)',
+  KJV: 'King James Version (English)',
+  ESV: 'English Standard Version (English)',
+  WEB: 'World English Bible (English)',
+};
+
+async function fetchFromGeminiAI(translation: string, bookName: string, chapter: number, language?: string) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY is not set');
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const prompt = `Return the complete text of ${bookName} Chapter ${chapter} in the ${translation} Bible translation.
+  const transLabel = TRANSLATION_MAP[translation.toUpperCase()] || translation;
+  const langClause = language ? ` in the context of language '${language}'` : '';
+
+  const prompt = `Return the complete text of ${bookName} Chapter ${chapter} in the ${transLabel} Bible translation${langClause}.
 Return a JSON array of objects with exact keys: "verse" (number) and "text" (string).
 Example:
 [
@@ -134,6 +166,7 @@ export async function GET(req: NextRequest) {
   const translation = searchParams.get('translation') || 'NKJV';
   const bookParam = searchParams.get('book') || 'John';
   const chapterParam = searchParams.get('chapter') || '3';
+  const language = searchParams.get('language') || 'en';
   const chapter = parseInt(chapterParam, 10) || 1;
 
   const bookMeta = BIBLE_BOOKS.find(
@@ -148,7 +181,7 @@ export async function GET(req: NextRequest) {
       verses = await fetchFromBolls(translation, bookMeta.id, validChapter);
     } catch (bollsErr) {
       console.warn('Bolls API failed, falling back to Gemini AI:', bollsErr);
-      verses = await fetchFromGeminiAI(translation, bookMeta.name, validChapter);
+      verses = await fetchFromGeminiAI(translation, bookMeta.name, validChapter, language);
     }
 
     return NextResponse.json({
@@ -174,6 +207,7 @@ export async function POST(req: NextRequest) {
     const translation = body.translation || 'NKJV';
     const bookParam = body.book || 'John';
     const chapterParam = body.chapter || 3;
+    const language = body.language || 'en';
     const chapter = parseInt(String(chapterParam), 10) || 1;
 
     const bookMeta = BIBLE_BOOKS.find(
@@ -187,7 +221,7 @@ export async function POST(req: NextRequest) {
       verses = await fetchFromBolls(translation, bookMeta.id, validChapter);
     } catch (bollsErr) {
       console.warn('Bolls API failed, falling back to Gemini AI:', bollsErr);
-      verses = await fetchFromGeminiAI(translation, bookMeta.name, validChapter);
+      verses = await fetchFromGeminiAI(translation, bookMeta.name, validChapter, language);
     }
 
     return NextResponse.json({

@@ -1,22 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { TopicStudyResult, TopicTabId, TopicTab } from '@/types/study';
+import { TopicStudyResult, TopicTabId, TopicTab, SupportedLanguage } from '@/types/study';
+import { t } from '@/lib/i18n';
 
 interface TopicBreakdownProps {
   result: TopicStudyResult | null;
   isLoading: boolean;
   topic: string;
+  currentLanguage?: SupportedLanguage;
 }
-
-const TOPIC_TABS: TopicTab[] = [
-  { id: 'overview', label: 'Overview', icon: '◈' },
-  { id: 'keyScriptures', label: 'Key Scriptures', icon: '📖' },
-  { id: 'wordStudy', label: 'Word Study', icon: 'Α' },
-  { id: 'theologicalDevelopment', label: 'Theological Development', icon: '📜' },
-  { id: 'practicalApplication', label: 'Application', icon: '🎯' },
-  { id: 'scholarlyPerspectives', label: 'Scholarly Insights', icon: '✍' },
-];
 
 function SkeletonBlock({ lines = 4 }: { lines?: number }) {
   return (
@@ -32,7 +25,7 @@ function SkeletonBlock({ lines = 4 }: { lines?: number }) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ currentLanguage = 'en' }: { currentLanguage?: SupportedLanguage }) {
   return (
     <div
       style={{
@@ -64,10 +57,10 @@ function EmptyState() {
       </div>
       <div>
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '500' }}>
-          Your topic study will appear here
+          {t('emptyTopicStudy', currentLanguage)}
         </p>
         <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px' }}>
-          Enter a Bible topic on the left and click &ldquo;Study this topic&rdquo;
+          {t('emptyTopicStudySub', currentLanguage)}
         </p>
       </div>
     </div>
@@ -326,8 +319,22 @@ function ScholarlyPerspectivesTab({ perspectives }: { perspectives?: TopicStudyR
   );
 }
 
-export default function TopicBreakdown({ result, isLoading, topic }: TopicBreakdownProps) {
+export default function TopicBreakdown({
+  result,
+  isLoading,
+  topic,
+  currentLanguage = 'en',
+}: TopicBreakdownProps) {
   const [activeTab, setActiveTab] = useState<TopicTabId>('overview');
+
+  const tabs: TopicTab[] = [
+    { id: 'overview', label: t('overview', currentLanguage), icon: '◈' },
+    { id: 'keyScriptures', label: t('keyScriptures', currentLanguage), icon: '📖' },
+    { id: 'wordStudy', label: t('wordStudy', currentLanguage), icon: 'Α' },
+    { id: 'theologicalDevelopment', label: t('theologicalDevelopment', currentLanguage), icon: '📜' },
+    { id: 'practicalApplication', label: t('practicalApplication', currentLanguage), icon: '🎯' },
+    { id: 'scholarlyPerspectives', label: t('scholarlyPerspectives', currentLanguage), icon: '✍' },
+  ];
 
   const renderContent = () => {
     if (isLoading) {
@@ -341,7 +348,7 @@ export default function TopicBreakdown({ result, isLoading, topic }: TopicBreakd
       );
     }
 
-    if (!result) return <EmptyState />;
+    if (!result) return <EmptyState currentLanguage={currentLanguage} />;
 
     const tabContent: Record<TopicTabId, React.ReactNode> = {
       overview: <OverviewTab text={result.overview} />,
@@ -418,7 +425,7 @@ export default function TopicBreakdown({ result, isLoading, topic }: TopicBreakd
           role="tablist"
           aria-label="Topic study tabs"
         >
-          {TOPIC_TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               id={`topic-tab-${tab.id}`}

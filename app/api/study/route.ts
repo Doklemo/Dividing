@@ -160,6 +160,20 @@ async function callOpenRouterFallback(userMessage: string): Promise<string> {
   return content;
 }
 
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  es: 'Spanish (Español)',
+  fr: 'French (Français)',
+  pt: 'Portuguese (Português)',
+  de: 'German (Deutsch)',
+  zh: 'Chinese (Simplified, 中文)',
+  ko: 'Korean (한국어)',
+  ja: 'Japanese (日本語)',
+  yo: 'Yoruba (Yorùbá)',
+  ig: 'Igbo (Asụsụ Igbo)',
+  ha: 'Hausa (Harshen Hausa)',
+};
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
 
@@ -174,7 +188,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { scripture } = body as { scripture: string };
+    const { scripture, language } = body as { scripture: string; language?: string };
 
     if (!scripture || typeof scripture !== 'string' || scripture.trim().length < 5) {
       return NextResponse.json(
@@ -196,15 +210,25 @@ export async function POST(req: NextRequest) {
       passageText = fetchedText;
     }
 
+    const targetLang = language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : (language || 'English');
+    const isNonEnglish = Boolean(language && language !== 'en');
+
+    const langInstruction = isNonEnglish
+      ? `\n\nCRITICAL MULTI-LANGUAGE REQUIREMENT:
+The user has requested the study to be output in: ${targetLang}.
+You MUST write all explanations, overviews, cross-reference connections, definitions, historical context, and commentary text in ${targetLang}.
+Keep original Greek/Hebrew root words in their original script, but provide their transliteration, definition, and usage explained entirely in ${targetLang}.`
+      : '';
+
     const genAI = new GoogleGenerativeAI(apiKey);
     
     // Initialize the model with the system prompt and Google Search grounding enabled
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      systemInstruction: SYSTEM_PROMPT,
+      systemInstruction: SYSTEM_PROMPT + langInstruction,
     });
 
-    userMessage = `Please provide a comprehensive Bible study breakdown for the following scripture:\n\n${passageText}`;
+    userMessage = `Please provide a comprehensive Bible study breakdown for the following scripture:\n\n${passageText}${langInstruction}`;
 
     const completion = await withRetry(() =>
       model.generateContent({

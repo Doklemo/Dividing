@@ -1,18 +1,31 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { BibleChapterData, BibleVerse } from '@/types/study';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { BibleChapterData, SupportedLanguage } from '@/types/study';
 import { BIBLE_BOOKS, BookMeta } from '@/app/api/bible/route';
+import {
+  LANGUAGE_BIBLE_VERSIONS,
+  getDefaultBibleVersion,
+  getLocalizedBookName,
+} from '@/lib/bibleTranslations';
+import { t } from '@/lib/i18n';
 
 interface BibleReaderProps {
   onTriggerStudy: (scriptureText: string) => void;
   isLoadingStudy?: boolean;
+  currentLanguage?: SupportedLanguage;
 }
 
-export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleReaderProps) {
-  const [translation, setTranslation] = useState<string>('NKJV');
+export default function BibleReader({
+  onTriggerStudy,
+  isLoadingStudy,
+  currentLanguage = 'en',
+}: BibleReaderProps) {
+  const [translation, setTranslation] = useState<string>(() =>
+    getDefaultBibleVersion(currentLanguage)
+  );
   const [selectedBook, setSelectedBook] = useState<BookMeta>(
-    BIBLE_BOOKS.find((b) => b.name === 'John') || BIBLE_BOOKS[42]
+    () => BIBLE_BOOKS.find((b) => b.name === 'John') || BIBLE_BOOKS[42]
   );
   const [chapter, setChapter] = useState<number>(3);
   const [chapterData, setChapterData] = useState<BibleChapterData | null>(null);
@@ -23,9 +36,22 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
   const [selectedVerseStart, setSelectedVerseStart] = useState<number | null>(null);
   const [selectedVerseEnd, setSelectedVerseEnd] = useState<number | null>(null);
 
+  // Available versions for current language
+  const availableVersions = useMemo(() => {
+    return LANGUAGE_BIBLE_VERSIONS[currentLanguage] || LANGUAGE_BIBLE_VERSIONS.en;
+  }, [currentLanguage]);
+
+  // When language changes, update translation if current one is not in the language's list
+  useEffect(() => {
+    const isCurrentValid = availableVersions.some((v) => v.code === translation);
+    if (!isCurrentValid) {
+      setTranslation(getDefaultBibleVersion(currentLanguage));
+    }
+  }, [currentLanguage, availableVersions, translation]);
+
   // Fetch chapter data
   const loadChapter = useCallback(
-    async (trans: string, bookName: string, chapNum: number) => {
+    async (trans: string, bookName: string, chapNum: number, lang: SupportedLanguage) => {
       setIsLoadingChapter(true);
       setFetchError(null);
       setSelectedVerseStart(null);
@@ -35,7 +61,7 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
         const res = await fetch(
           `/api/bible?translation=${encodeURIComponent(trans)}&book=${encodeURIComponent(
             bookName
-          )}&chapter=${chapNum}`
+          )}&chapter=${chapNum}&language=${encodeURIComponent(lang)}`
         );
 
         if (!res.ok) {
@@ -55,8 +81,8 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
   );
 
   useEffect(() => {
-    loadChapter(translation, selectedBook.name, chapter);
-  }, [translation, selectedBook, chapter, loadChapter]);
+    loadChapter(translation, selectedBook.name, chapter, currentLanguage);
+  }, [translation, selectedBook, chapter, currentLanguage, loadChapter]);
 
   // Handle chapter navigation
   const handlePrevChapter = () => {
@@ -108,6 +134,9 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
     }
   };
 
+  // Localized book name for current view
+  const currentLocalizedBook = getLocalizedBookName(selectedBook.id, currentLanguage);
+
   // Build reference string and text snippet for study trigger
   const getSelectedPassage = () => {
     if (!chapterData || selectedVerseStart === null) return null;
@@ -116,8 +145,8 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
 
     const ref =
       start === end
-        ? `${chapterData.book} ${chapterData.chapter}:${start}`
-        : `${chapterData.book} ${chapterData.chapter}:${start}-${end}`;
+        ? `${currentLocalizedBook} ${chapterData.chapter}:${start}`
+        : `${currentLocalizedBook} ${chapterData.chapter}:${start}-${end}`;
 
     const matchingVerses = chapterData.verses.filter((v) => v.verse >= start && v.verse <= end);
     const fullText = matchingVerses.map((v) => `${v.verse}. ${v.text}`).join(' ');
@@ -135,6 +164,17 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
     if (activePassage) {
       onTriggerStudy(activePassage.combined);
     }
+  };
+
+  // Format chapter select item
+  const formatChapterOption = (ch: number) => {
+    if (currentLanguage === 'zh' || currentLanguage === 'ja') {
+      return `第 ${ch} 章`;
+    }
+    if (currentLanguage === 'ko') {
+      return `제 ${ch} 장`;
+    }
+    return `${t('chapterPrefix', currentLanguage)} ${ch}`;
   };
 
   return (
@@ -161,16 +201,20 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
           {/* Translation Picker */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>VERSION:</span>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
+              {t('versionLabel', currentLanguage)}
+            </span>
             <select
               value={translation}
               onChange={(e) => setTranslation(e.target.value)}
               className="bible-select"
               aria-label="Select Bible Translation"
             >
-              <option value="NKJV">NKJV (New King James)</option>
-              <option value="KJV">KJV (King James)</option>
-              <option value="WEB">WEB (World English)</option>
+              {availableVersions.map((v) => (
+                <option key={v.code} value={v.code}>
+                  {v.name} ({v.label})
+                </option>
+              ))}
             </select>
           </div>
 
@@ -182,7 +226,7 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
               title="Previous Chapter"
               aria-label="Previous Chapter"
             >
-              ← Prev
+              {t('prevChapter', currentLanguage)}
             </button>
             <button
               onClick={handleNextChapter}
@@ -190,7 +234,7 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
               title="Next Chapter"
               aria-label="Next Chapter"
             >
-              Next →
+              {t('nextChapter', currentLanguage)}
             </button>
           </div>
         </div>
@@ -211,17 +255,17 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
             className="bible-select-large"
             aria-label="Select Bible Book"
           >
-            <optgroup label="Old Testament">
+            <optgroup label={t('oldTestament', currentLanguage)}>
               {BIBLE_BOOKS.filter((b) => b.testament === 'OT').map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.name}
+                  {getLocalizedBookName(b.id, currentLanguage)}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="New Testament">
+            <optgroup label={t('newTestament', currentLanguage)}>
               {BIBLE_BOOKS.filter((b) => b.testament === 'NT').map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.name}
+                  {getLocalizedBookName(b.id, currentLanguage)}
                 </option>
               ))}
             </optgroup>
@@ -236,7 +280,7 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
           >
             {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map((ch) => (
               <option key={ch} value={ch}>
-                Ch. {ch}
+                {formatChapterOption(ch)}
               </option>
             ))}
           </select>
@@ -257,8 +301,10 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
           border: '1px solid var(--border-subtle)',
         }}
       >
-        <span>💡 Click any verse number or text to select it for study</span>
-        <span style={{ fontWeight: 600, color: 'var(--accent-gold)' }}>{chapterData?.translation || translation}</span>
+        <span>{t('clickVerseTip', currentLanguage)}</span>
+        <span style={{ fontWeight: 600, color: 'var(--accent-gold)' }}>
+          {chapterData?.translation || translation}
+        </span>
       </div>
 
       {/* Main Chapter Content Scroll Area */}
@@ -292,14 +338,16 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
               border: '1px solid var(--border-subtle)',
             }}
           >
-            <p style={{ fontWeight: 600, marginBottom: '8px' }}>Unable to load chapter</p>
+            <p style={{ fontWeight: 600, marginBottom: '8px' }}>
+              {t('unableToLoadChapter', currentLanguage)}
+            </p>
             <p style={{ fontSize: '13px', opacity: 0.85, marginBottom: '14px' }}>{fetchError}</p>
             <button
-              onClick={() => loadChapter(translation, selectedBook.name, chapter)}
+              onClick={() => loadChapter(translation, selectedBook.name, chapter, currentLanguage)}
               className="primary-btn"
               style={{ padding: '6px 16px', fontSize: '13px' }}
             >
-              Retry
+              {t('retry', currentLanguage)}
             </button>
           </div>
         ) : chapterData ? (
@@ -315,7 +363,7 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
                 paddingBottom: '8px',
               }}
             >
-              {chapterData.book} {chapterData.chapter}
+              {currentLocalizedBook} {chapterData.chapter}
             </h2>
 
             {chapterData.verses.map((v) => {
@@ -343,7 +391,7 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
         <div className="bible-floating-modal animate-fade-up">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-gold)' }}>
-              Selected: {activePassage.reference}
+              {t('selectedPassage', currentLanguage)} {activePassage.reference}
             </span>
             <button
               onClick={() => {
@@ -359,7 +407,7 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
                 cursor: 'pointer',
               }}
             >
-              Clear
+              {t('clearSelection', currentLanguage)}
             </button>
           </div>
 
@@ -369,10 +417,10 @@ export default function BibleReader({ onTriggerStudy, isLoadingStudy }: BibleRea
             className="primary-btn pulse-glow bible-study-action-btn"
           >
             {isLoadingStudy ? (
-              <span>Preparing Study...</span>
+              <span>{t('preparingStudy', currentLanguage)}</span>
             ) : (
               <>
-                <span>📖 Study {activePassage.reference}</span>
+                <span>📖 {t('studyPassageBtn', currentLanguage)} {activePassage.reference}</span>
               </>
             )}
           </button>

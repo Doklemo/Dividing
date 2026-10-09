@@ -1,21 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { StudyResult, TabId, Tab } from '@/types/study';
+import { StudyResult, TabId, Tab, SupportedLanguage } from '@/types/study';
+import { t } from '@/lib/i18n';
 
 interface StudyBreakdownProps {
   result: StudyResult | null;
   isLoading: boolean;
   scripture: string;
+  currentLanguage?: SupportedLanguage;
 }
-
-const TABS: Tab[] = [
-  { id: 'overview', label: 'Overview', icon: '◈' },
-  { id: 'crossReferences', label: 'Cross references', icon: '⇌' },
-  { id: 'greekWords', label: 'Greek/Hebrew words', icon: 'Α' },
-  { id: 'historicalContext', label: 'Historical / Cultural', icon: '🏛' },
-  { id: 'commentaries', label: 'Commentaries', icon: '✍' },
-];
 
 function SkeletonBlock({ lines = 4 }: { lines?: number }) {
   return (
@@ -31,7 +25,7 @@ function SkeletonBlock({ lines = 4 }: { lines?: number }) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ currentLanguage = 'en' }: { currentLanguage?: SupportedLanguage }) {
   return (
     <div
       style={{
@@ -63,10 +57,10 @@ function EmptyState() {
       </div>
       <div>
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '500' }}>
-          Your study breakdown will appear here
+          {t('emptyVerseStudy', currentLanguage)}
         </p>
         <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px' }}>
-          Paste scripture on the left and click &ldquo;Let&apos;s study this scripture&rdquo;
+          {t('emptyVerseStudySub', currentLanguage)}
         </p>
       </div>
     </div>
@@ -241,8 +235,21 @@ function CommentariesTab({ commentaries }: { commentaries: StudyResult['commenta
   );
 }
 
-export default function StudyBreakdown({ result, isLoading, scripture }: StudyBreakdownProps) {
+export default function StudyBreakdown({
+  result,
+  isLoading,
+  scripture,
+  currentLanguage = 'en',
+}: StudyBreakdownProps) {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
+
+  const tabs: Tab[] = [
+    { id: 'overview', label: t('overview', currentLanguage), icon: '◈' },
+    { id: 'crossReferences', label: t('crossReferences', currentLanguage), icon: '⇌' },
+    { id: 'greekWords', label: t('greekWords', currentLanguage), icon: 'Α' },
+    { id: 'historicalContext', label: t('historicalContext', currentLanguage), icon: '🏛' },
+    { id: 'commentaries', label: t('commentaries', currentLanguage), icon: '✍' },
+  ];
 
   const renderContent = () => {
     if (isLoading) {
@@ -256,7 +263,7 @@ export default function StudyBreakdown({ result, isLoading, scripture }: StudyBr
       );
     }
 
-    if (!result) return <EmptyState />;
+    if (!result) return <EmptyState currentLanguage={currentLanguage} />;
 
     const tabContent: Record<TabId, React.ReactNode> = {
       overview: <OverviewTab text={result.overview} />,
@@ -332,7 +339,7 @@ export default function StudyBreakdown({ result, isLoading, scripture }: StudyBr
           role="tablist"
           aria-label="Study breakdown tabs"
         >
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               id={`tab-${tab.id}`}

@@ -6,11 +6,14 @@ import StudyBreakdown from '@/components/StudyBreakdown';
 import TopicBreakdown from '@/components/TopicBreakdown';
 import SavedStudies from '@/components/SavedStudies';
 import ExportMenu from '@/components/ExportMenu';
-import { StudyResult, SavedStudy, TopicStudyResult, SavedTopicStudy, StudyMode } from '@/types/study';
+import LanguageSelector from '@/components/LanguageSelector';
+import { StudyResult, SavedStudy, TopicStudyResult, SavedTopicStudy, StudyMode, SupportedLanguage } from '@/types/study';
 import { saveStudy, getAllStudies, saveTopicStudy, getAllTopicStudies } from '@/lib/storage';
+import { getStoredLanguage, setStoredLanguage, t } from '@/lib/i18n';
 
 export default function HomePage() {
   const [studyMode, setStudyMode] = useState<StudyMode>('verse');
+  const [language, setLanguage] = useState<SupportedLanguage>('en');
   const [scripture, setScripture] = useState('');
   const [result, setResult] = useState<StudyResult | null>(null);
   const [topic, setTopic] = useState('');
@@ -24,10 +27,16 @@ export default function HomePage() {
   const [currentTopicStudy, setCurrentTopicStudy] = useState<SavedTopicStudy | null>(null);
   const [mobileView, setMobileView] = useState<'input' | 'breakdown'>('input');
 
-  // Load saved studies on mount
+  // Load saved studies and language on mount
   useEffect(() => {
     setSavedStudies(getAllStudies());
     setSavedTopicStudies(getAllTopicStudies());
+    setLanguage(getStoredLanguage());
+  }, []);
+
+  const handleLanguageChange = useCallback((newLang: SupportedLanguage) => {
+    setLanguage(newLang);
+    setStoredLanguage(newLang);
   }, []);
 
   const handleModeChange = useCallback((mode: StudyMode) => {
@@ -47,7 +56,7 @@ export default function HomePage() {
       const res = await fetch('/api/study', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scripture: text }),
+        body: JSON.stringify({ scripture: text, language }),
       });
 
       if (!res.ok) {
@@ -67,7 +76,7 @@ export default function HomePage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [language]);
 
   const handleTopicStudy = useCallback(async (topicText: string) => {
     setTopic(topicText);
@@ -86,7 +95,7 @@ export default function HomePage() {
       const res = await fetch('/api/topic-study', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: topicText }),
+        body: JSON.stringify({ topic: topicText, language }),
       });
 
       if (!res.ok) {
@@ -114,7 +123,7 @@ export default function HomePage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [language]);
 
   const handleSubmit = useCallback((text: string) => {
     if (studyMode === 'verse' || studyMode === 'bible') {
@@ -218,7 +227,7 @@ export default function HomePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="pulse-dot" />
               <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                {(studyMode === 'verse' || studyMode === 'bible') ? 'AI is studying your scripture…' : 'AI is exploring this topic…'}
+                {(studyMode === 'verse' || studyMode === 'bible') ? t('loadingVerse', language) : t('loadingTopic', language)}
               </span>
             </div>
           )}
@@ -239,6 +248,11 @@ export default function HomePage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <LanguageSelector
+            currentLanguage={language}
+            onLanguageChange={handleLanguageChange}
+          />
+
           {activeResult && mobileView === 'input' && (
             <button
               className="mobile-view-breakdown-btn"
@@ -304,7 +318,7 @@ export default function HomePage() {
             }}
             aria-label={`View saved studies (${totalSaved})`}
           >
-            📚 Saved
+            {t('saved', language)}
             {totalSaved > 0 && (
               <span
                 style={{
@@ -356,6 +370,7 @@ export default function HomePage() {
             isLoading={isLoading}
             studyMode={studyMode}
             onModeChange={handleModeChange}
+            currentLanguage={language}
           />
         </div>
 
@@ -376,12 +391,14 @@ export default function HomePage() {
               result={result}
               isLoading={isLoading}
               scripture={scripture}
+              currentLanguage={language}
             />
           ) : (
             <TopicBreakdown
               result={topicResult}
               isLoading={isLoading}
               topic={topic}
+              currentLanguage={language}
             />
           )}
         </div>

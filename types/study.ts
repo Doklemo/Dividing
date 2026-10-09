@@ -111,3 +111,26 @@ export interface BibleChapterData {
   verses: BibleVerse[];
 }
 
+// ── Internationalization Types ───────────────────
+
+export type SupportedLanguage =
+  | 'en'
+  | 'es'
+  | 'fr'
+  | 'pt'
+  | 'de'
+  | 'zh'
+  | 'ko'
+  | 'ja'
+  | 'yo'
+  | 'ig'
+  | 'ha';
+
+export interface LanguageMeta {
+  code: SupportedLanguage;
+  name: string;
+  nativeName: string;
+  flag: string;
+}
+
+

@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { StudyMode } from '@/types/study';
+import { StudyMode, SupportedLanguage } from '@/types/study';
 import BibleReader from '@/components/BibleReader';
+import { t } from '@/lib/i18n';
 
 interface ScriptureInputProps {
   onSubmit: (text: string) => void;
   isLoading: boolean;
   studyMode: StudyMode;
   onModeChange: (mode: StudyMode) => void;
+  currentLanguage?: SupportedLanguage;
 }
 
 const EXAMPLE_VERSES = [
@@ -32,7 +34,13 @@ const EXAMPLE_TOPICS = [
   'Heaven and Eternal Life',
 ];
 
-export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeChange }: ScriptureInputProps) {
+export default function ScriptureInput({
+  onSubmit,
+  isLoading,
+  studyMode,
+  onModeChange,
+  currentLanguage = 'en',
+}: ScriptureInputProps) {
   const [text, setText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -90,7 +98,7 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
           disabled={isLoading}
           aria-label="Switch to verse study mode"
         >
-          Verse Study
+          {t('verseStudy', currentLanguage)}
         </button>
         <button
           className={`mode-toggle-btn${studyMode === 'topic' ? ' active' : ''}`}
@@ -98,20 +106,24 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
           disabled={isLoading}
           aria-label="Switch to topic study mode"
         >
-          Topic Study
+          {t('topicStudy', currentLanguage)}
         </button>
         <button
           className={`mode-toggle-btn${studyMode === 'bible' ? ' active' : ''}`}
           onClick={() => handleModeSwitch('bible')}
           disabled={isLoading}
-          aria-label="Switch to NKJV Bible reader mode"
+          aria-label="Switch to Bible reader mode"
         >
-          NKJV Reader
+          {t('bibleReader', currentLanguage)}
         </button>
       </div>
 
       {studyMode === 'bible' ? (
-        <BibleReader onTriggerStudy={onSubmit} isLoadingStudy={isLoading} />
+        <BibleReader
+          onTriggerStudy={onSubmit}
+          isLoadingStudy={isLoading}
+          currentLanguage={currentLanguage}
+        />
       ) : (
         <>
           {/* Header */}
@@ -126,13 +138,11 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
               letterSpacing: '-0.01em',
             }}
           >
-            {isVerse ? 'Dividing the word of truth' : 'Explore a Bible topic'}
+            {isVerse ? t('verseTitle', currentLanguage) : t('topicTitle', currentLanguage)}
           </h1>
         </div>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          {isVerse
-            ? 'Paste any scripture passage for a deep AI-powered study'
-            : 'Enter a topic for a comprehensive biblical exploration'}
+          {isVerse ? t('verseSubtitle', currentLanguage) : t('topicSubtitle', currentLanguage)}
         </p>
       </div>
 
@@ -159,8 +169,8 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
           onKeyDown={handleKeyDown}
           placeholder={
             isVerse
-              ? "Paste the Bible verse(s) you want to study here…\n\nExample: For God so loved the world… (John 3:16)"
-              : "Enter a Bible topic to study…\n\nExample: Grace, Sanctification, The Holy Spirit"
+              ? t('versePlaceholder', currentLanguage)
+              : t('topicPlaceholder', currentLanguage)
           }
           aria-label={isVerse ? 'Scripture input' : 'Topic input'}
           style={{
@@ -209,12 +219,12 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
           {isLoading ? (
             <>
               <span className="pulse-dot" style={{ flexShrink: 0 }} />
-              <span>{isVerse ? 'Studying scripture…' : 'Studying topic…'}</span>
+              <span>{isVerse ? t('loadingVerse', currentLanguage) : t('loadingTopic', currentLanguage)}</span>
             </>
           ) : (
             <>
               <span>✦</span>
-              <span>{isVerse ? "Let\u0027s study this scripture" : 'Study this topic'}</span>
+              <span>{isVerse ? t('studyVerseBtn', currentLanguage) : t('exploreTopicBtn', currentLanguage)}</span>
             </>
           )}
         </button>
@@ -253,7 +263,7 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
               (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
             }}
           >
-            ⚡ Try an example
+            {t('tryExample', currentLanguage)}
           </button>
 
           {text && (
@@ -269,12 +279,12 @@ export default function ScriptureInput({ onSubmit, isLoading, studyMode, onModeC
                 fontFamily: 'Inter, sans-serif',
               }}
             >
-              Clear
+              {t('clear', currentLanguage)}
             </button>
           )}
 
           <span className="hide-mobile" style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
-            ⌘ + Enter to study
+            {t('shortcutHint', currentLanguage)}
           </span>
         </div>
       </div>
