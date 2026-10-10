@@ -9,22 +9,20 @@ export interface BibleVersionOption {
 export const LANGUAGE_BIBLE_VERSIONS: Record<SupportedLanguage, BibleVersionOption[]> = {
   en: [
     { code: 'NKJV', label: 'NKJV', name: 'New King James Version' },
-    { code: 'KJV', label: 'KJV', name: 'King James Version' },
     { code: 'ESV', label: 'ESV', name: 'English Standard Version' },
-    { code: 'NIV', label: 'NIV', name: 'New International Version' },
+    { code: 'KJV', label: 'KJV', name: 'King James Version' },
+    { code: 'NASB', label: 'NASB', name: 'New American Standard Bible' },
     { code: 'WEB', label: 'WEB', name: 'World English Bible' },
   ],
   es: [
     { code: 'RV1960', label: 'RVR1960', name: 'Reina-Valera 1960' },
     { code: 'NVI', label: 'NVI', name: 'Nueva Versión Internacional' },
     { code: 'LBLA', label: 'LBLA', name: 'La Biblia de las Américas' },
-    { code: 'NKJV', label: 'NKJV', name: 'New King James (English)' },
   ],
   fr: [
     { code: 'FRLSG', label: 'LSG', name: 'Louis Segond 1910' },
     { code: 'BDS', label: 'BDS', name: 'La Bible du Semeur' },
     { code: 'NBS', label: 'NBS', name: 'Nouvelle Bible Segond' },
-    { code: 'KJV', label: 'KJV', name: 'King James (Anglais)' },
   ],
   pt: [
     { code: 'ARC09', label: 'ARC', name: 'Almeida Revista e Corrigida' },
@@ -36,22 +34,18 @@ export const LANGUAGE_BIBLE_VERSIONS: Record<SupportedLanguage, BibleVersionOpti
     { code: 'LUT', label: 'LUT', name: 'Lutherbibel 1912' },
     { code: 'S00', label: 'SCH2000', name: 'Schlachter 2000' },
     { code: 'HFA', label: 'HFA', name: 'Hoffnung für Alle' },
-    { code: 'KJV', label: 'KJV', name: 'King James (Englisch)' },
   ],
   zh: [
     { code: 'CUNPS', label: '和合本', name: '新标点和合本 (简体)' },
     { code: 'CUV', label: '和合本(繁)', name: '和合本 (繁體)' },
-    { code: 'NKJV', label: 'NKJV', name: 'New King James (英文)' },
   ],
   ko: [
     { code: 'KRV', label: '개역한글', name: '개역한글 (KRV)' },
     { code: 'RNKSV', label: '새번역', name: '새번역 (RNKSV)' },
-    { code: 'NKJV', label: 'NKJV', name: 'New King James (영어)' },
   ],
   ja: [
-    { code: 'JPKJV', label: '口語訳', name: '口語訳聖書 (1955)' },
     { code: 'NJB', label: '新改訳', name: '新改訳聖書 (NJB)' },
-    { code: 'NKJV', label: 'NKJV', name: 'New King James (英語)' },
+    { code: 'JPKJV', label: '口語訳', name: '口語訳聖書 (1955)' },
   ],
   yo: [
     { code: 'BM', label: 'Bíbélì Mímọ́', name: 'Bíbélì Mímọ́ (Yorùbá)' },

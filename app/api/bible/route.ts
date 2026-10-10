@@ -79,7 +79,13 @@ export const BIBLE_BOOKS: BookMeta[] = [
 ];
 
 function sanitizeHtml(str: string): string {
-  return str.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim();
+  return str
+    .replace(/<s[^>]*>.*?<\/s>/gi, '') // Strip Strong's concordance tags like <S>1161</S>
+    .replace(/<sup[^>]*>.*?<\/sup>/gi, '') // Strip pronunciation ruby guide tags
+    .replace(/<[^>]*>?/gm, '') // Strip remaining HTML
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 async function fetchFromBolls(translation: string, bookId: number, chapter: number) {

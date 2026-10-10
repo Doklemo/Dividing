@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { BibleChapterData, SupportedLanguage } from '@/types/study';
 import { BIBLE_BOOKS, BookMeta } from '@/app/api/bible/route';
 import {
@@ -41,11 +41,18 @@ export default function BibleReader({
     return LANGUAGE_BIBLE_VERSIONS[currentLanguage] || LANGUAGE_BIBLE_VERSIONS.en;
   }, [currentLanguage]);
 
-  // When language changes, update translation if current one is not in the language's list
+  // Track previous language so when user changes language, we automatically switch translation
+  const prevLangRef = useRef<SupportedLanguage>(currentLanguage);
+
   useEffect(() => {
-    const isCurrentValid = availableVersions.some((v) => v.code === translation);
-    if (!isCurrentValid) {
+    if (prevLangRef.current !== currentLanguage) {
+      prevLangRef.current = currentLanguage;
       setTranslation(getDefaultBibleVersion(currentLanguage));
+    } else {
+      const isCurrentValid = availableVersions.some((v) => v.code === translation);
+      if (!isCurrentValid) {
+        setTranslation(getDefaultBibleVersion(currentLanguage));
+      }
     }
   }, [currentLanguage, availableVersions, translation]);
 
