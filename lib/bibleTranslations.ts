@@ -16,7 +16,7 @@ export const LANGUAGE_BIBLE_VERSIONS: Record<SupportedLanguage, BibleVersionOpti
   ],
   es: [
     { code: 'RV1960', label: 'RVR1960', name: 'Reina-Valera 1960' },
-    { code: 'NVI', label: 'NVI', name: 'Nueva Versión Internacional' },
+    { code: 'NTV', label: 'NTV', name: 'Nueva Traducción Viviente' },
     { code: 'LBLA', label: 'LBLA', name: 'La Biblia de las Américas' },
   ],
   fr: [
@@ -27,7 +27,6 @@ export const LANGUAGE_BIBLE_VERSIONS: Record<SupportedLanguage, BibleVersionOpti
   pt: [
     { code: 'ARC09', label: 'ARC', name: 'Almeida Revista e Corrigida' },
     { code: 'ARA', label: 'ARA', name: 'Almeida Revista e Atualizada' },
-    { code: 'NVIPT', label: 'NVI', name: 'Nova Versão Internacional' },
     { code: 'NTLH', label: 'NTLH', name: 'Nova Tradução na Linguagem de Hoje' },
   ],
   de: [
@@ -49,15 +48,12 @@ export const LANGUAGE_BIBLE_VERSIONS: Record<SupportedLanguage, BibleVersionOpti
   ],
   yo: [
     { code: 'BM', label: 'Bíbélì Mímọ́', name: 'Bíbélì Mímọ́ (Yorùbá)' },
-    { code: 'KJV', label: 'KJV', name: 'King James Version' },
   ],
   ig: [
     { code: 'IBO', label: 'Bible Nsọ', name: 'Bible Nsọ (Igbo)' },
-    { code: 'KJV', label: 'KJV', name: 'King James Version' },
   ],
   ha: [
     { code: 'HAU', label: 'Littafi Mai Tsarki', name: 'Littafi Mai Tsarki (Hausa)' },
-    { code: 'KJV', label: 'KJV', name: 'King James Version' },
   ],
 };
 

@@ -382,7 +382,7 @@ export default function TopicBreakdown({
                 textTransform: 'uppercase',
               }}
             >
-              Topic Study
+              {t('topicStudyHeader', currentLanguage)}
             </h2>
             {topic && (
               <p
@@ -402,13 +402,15 @@ export default function TopicBreakdown({
           </div>
           {result && (
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span className="badge badge-green">✓ Complete</span>
+              <span className="badge badge-green">{t('completeBadge', currentLanguage)}</span>
             </div>
           )}
           {isLoading && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="pulse-dot" />
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Analyzing…</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {t('analyzing', currentLanguage)}
+              </span>
             </div>
           )}
         </div>

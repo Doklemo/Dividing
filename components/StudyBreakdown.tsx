@@ -300,7 +300,7 @@ export default function StudyBreakdown({
                 textTransform: 'uppercase',
               }}
             >
-              Study Breakdown
+              {t('studyBreakdown', currentLanguage)}
             </h2>
             {scripture && (
               <p
@@ -318,11 +318,13 @@ export default function StudyBreakdown({
               </p>
             )}
           </div>
-          {result && <span className="badge badge-green">✓ Complete</span>}
+          {result && <span className="badge badge-green">{t('completeBadge', currentLanguage)}</span>}
           {isLoading && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="pulse-dot" />
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Analyzing…</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {t('analyzing', currentLanguage)}
+              </span>
             </div>
           )}
         </div>

@@ -83,6 +83,7 @@ function sanitizeHtml(str: string): string {
     .replace(/<s[^>]*>.*?<\/s>/gi, '') // Strip Strong's concordance tags like <S>1161</S>
     .replace(/<sup[^>]*>.*?<\/sup>/gi, '') // Strip pronunciation ruby guide tags
     .replace(/<[^>]*>?/gm, '') // Strip remaining HTML
+    .replace(/[•·]/g, '') // Strip bullet marks
     .replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -111,14 +112,13 @@ const TRANSLATION_MAP: Record<string, string> = {
   IBO: 'Bible Nsọ (Igbo Bible)',
   HAU: 'Littafi Mai Tsarki (Hausa Bible)',
   RV1960: 'Reina-Valera 1960 (Spanish)',
-  NVI: 'Nueva Versión Internacional (Spanish)',
+  NTV: 'Nueva Traducción Viviente (Spanish)',
   LBLA: 'La Biblia de las Américas (Spanish)',
   FRLSG: 'Louis Segond 1910 (French)',
   BDS: 'La Bible du Semeur (French)',
   NBS: 'Nouvelle Bible Segond (French)',
   ARC09: 'Almeida Revista e Corrigida (Portuguese)',
   ARA: 'Almeida Revista e Atualizada (Portuguese)',
-  NVIPT: 'Nova Versão Internacional (Portuguese)',
   NTLH: 'Nova Tradução na Linguagem de Hoje (Portuguese)',
   LUT: 'Lutherbibel 1912 (German)',
   S00: 'Schlachter 2000 (German)',
@@ -132,6 +132,7 @@ const TRANSLATION_MAP: Record<string, string> = {
   NKJV: 'New King James Version (English)',
   KJV: 'King James Version (English)',
   ESV: 'English Standard Version (English)',
+  NASB: 'New American Standard Bible (English)',
   WEB: 'World English Bible (English)',
 };
 
